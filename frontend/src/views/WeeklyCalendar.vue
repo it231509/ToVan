@@ -69,10 +69,10 @@ const getInitials = (day) => day.substring(0, 2);
       
       <div class="bg-secondary/10 rounded-3xl p-6 flex items-center justify-between border border-secondary/20 md:col-span-2">
         <div>
-          <h3 class="font-bold text-secondary text-lg">Einkaufsliste bereit!</h3>
-          <p class="text-sm text-secondary/80">Alle Zutaten für diese Woche sind berechnet.</p>
+          <h3 class="font-bold text-secondary text-lg">Einkaufsliste bereitstellen!</h3>
+          <p class="text-sm text-secondary/80">Alle Zutaten für diese Woche zur Einkaufsliste hinzufügen.</p>
         </div>
-        <button class="btn btn-secondary shadow-lg">Zur Liste</button>
+        <button class="btn btn-secondary shadow-lg">Hinzufügen</button>
       </div>
     </div>
 
