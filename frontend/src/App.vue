@@ -18,11 +18,15 @@
     </div>
     <div class="drawer-side">
       <label for="my-drawer-3" aria-label="close sidebar" class="drawer-overlay"></label>
-      <ul class="menu bg-base-200 min-h-full w-80 p-4" style="background-color: white; display: flex; align-items: center; justify-content: center; gap: 30px;">
-        <!-- Sidebar content here -->
-        <li><RouterLink to="/" class="flex justify-center"><img src="./assets/recipe-book.png" alt="Rezepte" class="w-[35px]"></RouterLink></li>
-        <li><RouterLink to="/calendar" class="flex justify-center"><img src="./assets/schedule.png" alt="Wochenplan" class="w-[32px]"></RouterLink></li>
-        <li><RouterLink to="/shoppinglist" class="flex justify-center"><img src="./assets/clipboard.png" alt="Einkaufsliste" class="w-[30px]"></RouterLink></li>
+      <ul class="menu bg-base-200 min-h-full w-80 p-4" style="background-color: white; display: flex; justify-content: space-between; margin: 10px; min-height: calc(100% - 20px); border-radius: 20px;">
+        <img src="./assets/Logo.png" alt="ToVan Logo">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px;">
+          <li><RouterLink to="/" class="flex justify-center"><img src="./assets/home.png" alt="Rezepte" class="w-[21.5px]"></RouterLink></li>
+          <li><RouterLink to="/recipes" class="flex justify-center"><img src="./assets/list.png" alt="Rezepte" class="w-[18.5px]"></RouterLink></li>
+          <li><RouterLink to="/calendar" class="flex justify-center"><img src="./assets/calendar.png" alt="Wochenplan" class="w-[21.5px]"></RouterLink></li>
+          <li><RouterLink to="/shoppinglist" class="flex justify-center"><img src="./assets/bag.png" alt="Einkaufsliste" class="w-[25px]"></RouterLink></li>
+        </div>
+        <div></div>
       </ul>
     </div>
   </div>

@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 // HomeView laden wir direkt
-import RecipeList from '../views/RecipeList.vue'
+import RecipeList from '../views/RecipeList.vue';
+import RecipeDetail from '../views/RecipeDetail.vue';
+import WeeklyCalendar from '../views/WeeklyCalendar.vue';
+import ShoppingList from '../views/ShoppingList.vue';
+import Home from '../views/Home.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,28 +12,28 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: RecipeList,
+      component: Home,
     },
     {
       path: '/recipes',
       name: 'recipes',
-      component: () => import('../views/RecipeList.vue'), 
+      component: RecipeList, 
     },
     {
       path: '/recipe/:id',
       name: 'recipe-detail',
-      component: () => import('../views/RecipeDetail.vue'),
+      component: RecipeDetail,
       props: true
     },
     {
       path: '/calendar',
       name: 'calendar',
-      component: () => import('../views/WeeklyCalendar.vue'),
+      component: WeeklyCalendar,
     },
     {
       path: '/shoppinglist',
       name: 'shoppinglist',
-      component: () => import('../views/ShoppingList.vue'), 
+      component: ShoppingList, 
     },
   ],
 })

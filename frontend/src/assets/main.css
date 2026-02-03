@@ -2,7 +2,7 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* Hier kannst du später eigene Styles hinzufügen, falls nötig */
+
 body {
-  background-color: #f8fafc; /* Ein ganz leichtes Grau für den Hintergrund */
+  background-color: #f2f2f2; 
 }
