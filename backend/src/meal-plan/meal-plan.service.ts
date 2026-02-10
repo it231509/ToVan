@@ -5,7 +5,6 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class MealPlanService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  // 1. Wochenplan für einen Zeitraum abrufen (inkl. Rezept-Details)
   async getPlanForRange(startDate: string, endDate: string) {
     const { data, error } = await this.supabaseService.client
       .from('meal_plan')
@@ -25,7 +24,6 @@ export class MealPlanService {
     return data;
   }
 
-  // 2. Ein Rezept einem Tag/Mahlzeit zuweisen
   async addMeal(mealData: any) {
     const { data, error } = await this.supabaseService.client
       .from('meal_plan')
@@ -37,7 +35,6 @@ export class MealPlanService {
     return data;
   }
 
-  // 3. Einen Eintrag im Plan verschieben oder ändern
   async updateMeal(id: string, updateData: any) {
     const { data, error } = await this.supabaseService.client
       .from('meal_plan')
@@ -50,7 +47,6 @@ export class MealPlanService {
     return data;
   }
 
-  // 4. Ein Rezept aus dem Plan entfernen
   async removeMeal(id: string) {
     const { error } = await this.supabaseService.client
       .from('meal_plan')

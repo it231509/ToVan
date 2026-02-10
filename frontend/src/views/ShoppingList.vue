@@ -1,40 +1,79 @@
-<script setup>
-import { ref, computed, onMounted } from 'vue';
+<script>
+import { getShoppingList, toggleShoppingListItem, clearCheckedItems, removeShoppingListItem } from '@/http';
 
-// Beispiel-Daten (später durch fetch ersetzen)
-const items = ref([
-  { id: 1, item_name: 'Avocado', amount: 2, unit: 'Stk', category: 'Gemüse', is_checked: false },
-  { id: 2, item_name: 'Lachsfilet', amount: 300, unit: 'g', category: 'Protein', is_checked: true },
-  { id: 3, item_name: 'Quinoa', amount: 1, unit: 'Pkg', category: 'Vorratsschrank', is_checked: false },
-  { id: 4, item_name: 'Kurkuma', amount: 1, unit: 'TL', category: 'Gewürze', is_checked: false },
-]);
+export default {
+  data() {
+    return {
+      items: [],
+      loading: false
+    }
+  },
 
-const groupedItems = computed(() => {
-  return items.value.reduce((acc, item) => {
-    const cat = item.category || 'Sonstiges';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
-});
+  computed: {
+    groupedItems() {
+      return this.items.reduce((acc, item) => {
+        const cat = item.category || 'Sonstiges';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {});
+    },
 
-const toggleItem = async (item) => {
-  // Hier dein API Call
-  // await fetch(`/api/shopping-list/${item.id}/toggle`, { ... });
-  item.is_checked = !item.is_checked;
+    progress() {
+      if (this.items.length === 0) return 0;
+      const checked = this.items.filter(i => i.is_checked).length;
+      return Math.round((checked / this.items.length) * 100);
+    }
+  },
+
+  created() {
+    this.fetchList();
+  },
+
+  methods: {
+    async fetchList() {
+      try {
+        this.items = await getShoppingList();
+      } catch (e) {
+        console.error('Fehler beim Laden der Liste');
+      }
+    },
+
+    async toggleItem(item) {
+      try {
+        item.is_checked = !item.is_checked;
+        await toggleShoppingListItem(item.id, item.is_checked);
+      } catch (e) {
+        item.is_checked = !item.is_checked;
+        console.error('Status konnte nicht aktualisiert werden');
+      }
+    },
+
+    async deleteItem(id) {
+      try {
+        await removeShoppingListItem(id);
+        this.items = this.items.filter(item => item.id !== id);
+      } catch (e) {
+        console.error('Item konnte nicht gelöscht werden');
+      }
+    },
+
+    async clearChecked() {
+      try {
+        await clearCheckedItems();
+        this.items = this.items.filter(item => !item.is_checked);
+      } catch (e) {
+        console.error('Fehler beim Bereinigen der Liste');
+      }
+    }
+  }
 };
-
-const progress = computed(() => {
-  if (items.value.length === 0) return 0;
-  const checked = items.value.filter(i => i.is_checked).length;
-  return Math.round((checked / items.value.length) * 100);
-});
 </script>
 
 <template>
-  <div class="container mx-auto p-4 lg:p-8">
+  <div class="container mx-auto p-4 lg:p-8 max-w-4xl">
     
-    <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+    <div class="flex flex-col md:flex-row justify-between mb-10 gap-6">
       <div>
         <h1 class="text-4xl font-black text-slate-800 tracking-tight">
           Deine <span class="text-secondary">Einkaufsliste</span>
@@ -50,6 +89,13 @@ const progress = computed(() => {
         <div class="w-full bg-slate-100 rounded-full h-2.5">
           <div class="bg-secondary h-2.5 rounded-full transition-all duration-500" :style="{ width: progress + '%' }"></div>
         </div>
+        <button 
+          v-if="progress > 0"
+          @click="clearChecked" 
+          class="text-[10px] text-secondary font-bold uppercase mt-2 hover:underline tracking-tight"
+        >
+          Erledigte löschen
+        </button>
       </div>
     </div>
 
@@ -66,10 +112,9 @@ const progress = computed(() => {
             <div 
               v-for="item in list" 
               :key="item.id" 
-              @click="toggleItem(item)"
               class="group flex items-center p-4 hover:bg-secondary/5 transition-colors cursor-pointer"
             >
-              <div class="relative flex items-center">
+              <div class="relative flex items-center" @click.stop="toggleItem(item)">
                 <input 
                   type="checkbox" 
                   :checked="item.is_checked"
@@ -77,7 +122,7 @@ const progress = computed(() => {
                 />
               </div>
 
-              <div class="ml-4 flex-grow">
+              <div class="ml-4 flex-grow" @click.stop="toggleItem(item)">
                 <span 
                   class="text-slate-700 font-medium transition-all"
                   :class="{ 'line-through text-slate-300 opacity-70': item.is_checked }"
@@ -86,8 +131,19 @@ const progress = computed(() => {
                 </span>
               </div>
 
-              <div class="text-sm font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full group-hover:bg-white transition-colors">
-                {{ item.amount }} {{ item.unit }}
+              <div class="flex items-center gap-3">
+                <div class="text-sm font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full group-hover:bg-white transition-colors">
+                  {{ item.amount }} {{ item.unit }}
+                </div>
+                
+                <button 
+                  @click.stop="deleteItem(item.id)" 
+                  class="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-error transition-all"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -105,13 +161,10 @@ const progress = computed(() => {
 </template>
 
 <style scoped>
-/* Sanfterer Look für die Checkboxen */
 .checkbox {
   --chkbg: theme('colors.secondary.DEFAULT');
   --chkfg: white;
 }
-
-/* Entfernt den Standard-Ring beim Fokus, um das Design weich zu halten */
 .checkbox:focus {
   box-shadow: none;
 }

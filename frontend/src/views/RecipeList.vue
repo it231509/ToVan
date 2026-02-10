@@ -3,33 +3,37 @@ import { getAllRecipes } from '@/http';
 
 export default {
     data() {
-        return {
-            recipes: [],
-        }
+      return {
+        recipes: [],
+      }
     },
 
     created() {
-        this.fetchRecipes();
+      this.fetchRecipes();
     },
 
     components: {},
 
     methods: {
         async fetchRecipes() {
-            try {
-                const response = await getAllRecipes();
-                this.recipes = response;
-            } catch (e) {
-                console.error('Error fetching recipes');
-            }
+          try {
+              const response = await getAllRecipes();
+              this.recipes = response;
+          } catch (e) {
+              console.error('Error fetching recipes');
+          }
         },
+
+        goToDetail(id) {
+          this.$router.push({ name: 'recipe-detail', params: { id: id } });
+        }
     },
 };
 </script>
 
 <template>
   <div class="container mx-auto p-4 lg:p-8">
-    <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+    <div class="flex flex-col md:flex-row justify-between mb-12 gap-6">
       <div>
         <h1 class="text-4xl font-black text-slate-800 tracking-tight">
           Deine <span class="text-success">Rezepte</span>
@@ -58,7 +62,7 @@ export default {
         v-for="recipe in recipes" 
         :key="recipe.id" 
         class="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
-        @click="$emit('show-detail', recipe.id)"
+        @click="$router.push(`/recipe/${recipe.id}`)"
       >
         <div class="relative h-48 overflow-hidden">
           <img 

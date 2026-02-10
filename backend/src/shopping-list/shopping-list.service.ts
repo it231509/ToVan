@@ -9,7 +9,7 @@ export class ShoppingListService {
     const { data, error } = await this.supabaseService.client
       .from('shopping_list')
       .select('*')
-      .order('is_checked', { ascending: true }) // Erledigte Sachen nach unten
+      .order('is_checked', { ascending: true })
       .order('category', { ascending: true });
     
     if (error) throw error;
@@ -27,14 +27,12 @@ export class ShoppingListService {
   }
 
   async clearChecked() {
-    // Löscht alle bereits gekauften Artikel
     await this.supabaseService.client
       .from('shopping_list')
       .delete()
       .eq('is_checked', true);
   }
 
-  // Ein einzelnes Item hinzufügen
 async addItem(itemData: any) {
   const { data, error } = await this.supabaseService.client
     .from('shopping_list')
@@ -46,7 +44,6 @@ async addItem(itemData: any) {
   return data;
 }
 
-// Ein einzelnes Item löschen
 async removeItem(id: string) {
   const { error } = await this.supabaseService.client
     .from('shopping_list')
@@ -58,7 +55,6 @@ async removeItem(id: string) {
 }
 
 async generateFromMealPlan(startDate: string, endDate: string) {
-  // 1. Alle Mahlzeiten inklusive Zutaten abrufen
   const { data: meals, error } = await this.supabaseService.client
     .from('meal_plan')
     .select(`
@@ -71,12 +67,10 @@ async generateFromMealPlan(startDate: string, endDate: string) {
 
   if (error) throw error;
 
-  // 2. Zutaten flachklopfen und zusammenrechnen
   const ingredientMap = new Map();
 
   meals.forEach((meal: any) => {
     meal.recipe.ingredients.forEach((ing: any) => {
-      // Key aus Name und Einheit erstellen (damit 500g und 1 Stück nicht addiert werden)
       const key = `${ing.ingredient_name.toLowerCase()}_${ing.unit}`;
       
       if (ingredientMap.has(key)) {
@@ -93,7 +87,6 @@ async generateFromMealPlan(startDate: string, endDate: string) {
     });
   });
 
-  // 3. Die berechneten Zutaten in die Shopping-List Tabelle schreiben
   const finalItems = Array.from(ingredientMap.values());
   const { data, error: insertError } = await this.supabaseService.client
     .from('shopping_list')

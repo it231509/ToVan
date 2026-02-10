@@ -1,47 +1,81 @@
 <template>
-  <!--<header>
-    <nav>
-      <RouterLink to="/">Rezepte</RouterLink> |
-      <RouterLink to="/calendar">Wochenplan</RouterLink> |
-      <RouterLink to="/shoppinglist">Shoppinglist</RouterLink>
-    </nav>
-  </header>-->
-  
-  <div class="drawer lg:drawer-open">
+  <div class="drawer lg:drawer-open bg-slate-50 min-h-screen">
     <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content flex flex-col items-center justify-start">
-      <!-- Page content here -->
-      <label for="my-drawer-3" class="btn drawer-button lg:hidden">
-        Open drawer
-      </label>
-      <RouterView />
+    
+    <div class="drawer-content flex flex-col">
+      <main class="flex-grow pb-24 lg:pb-0">
+        <RouterView />
+      </main>
+
+      <div class="lg:hidden fixed bottom-4 left-4 right-4 z-50">
+        <nav class="bg-white/80 backdrop-blur-lg border border-slate-100 rounded-3xl shadow-2xl px-8 py-4 flex justify-between items-center">
+          <RouterLink to="/" class="mobile-nav-link">
+            <img src="./assets/home.png" alt="Home" class="w-6 h-6 object-contain">
+          </RouterLink>
+          <RouterLink to="/recipes" class="mobile-nav-link">
+            <img src="./assets/list.png" alt="Rezepte" class="w-6 h-6 object-contain">
+          </RouterLink>
+          <RouterLink to="/calendar" class="mobile-nav-link">
+            <img src="./assets/calendar.png" alt="Plan" class="w-6 h-6 object-contain">
+          </RouterLink>
+          <RouterLink to="/shoppinglist" class="mobile-nav-link">
+            <img src="./assets/bag.png" alt="Einkauf" class="w-6 h-6 object-contain">
+          </RouterLink>
+        </nav>
+      </div>
     </div>
-    <div class="drawer-side">
+
+    <div class="drawer-side z-40">
       <label for="my-drawer-3" aria-label="close sidebar" class="drawer-overlay"></label>
-      <ul class="menu bg-base-200 min-h-full w-80 p-4" style="background-color: white; display: flex; justify-content: space-between; margin: 10px; min-height: calc(100% - 20px); border-radius: 20px;">
-        <img src="./assets/Logo.png" alt="ToVan Logo">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px;">
-          <li><RouterLink to="/" class="flex justify-center"><img src="./assets/home.png" alt="Rezepte" class="w-[21.5px]"></RouterLink></li>
-          <li><RouterLink to="/recipes" class="flex justify-center"><img src="./assets/list.png" alt="Rezepte" class="w-[18.5px]"></RouterLink></li>
-          <li><RouterLink to="/calendar" class="flex justify-center"><img src="./assets/calendar.png" alt="Wochenplan" class="w-[21.5px]"></RouterLink></li>
-          <li><RouterLink to="/shoppinglist" class="flex justify-center"><img src="./assets/bag.png" alt="Einkaufsliste" class="w-[25px]"></RouterLink></li>
+      <div class="menu bg-white min-h-[calc(100%-40px)] w-24 m-5 rounded-[30px] shadow-sm flex flex-col justify-between py-10 items-center border border-slate-50">
+        
+        <img src="./assets/Logo.png" alt="ToVan Logo" class="w-12 h-auto">
+        
+        <div class="flex flex-col gap-10">
+          <RouterLink to="/" class="sidebar-link">
+            <img src="./assets/home.png" alt="Home" class="w-5">
+          </RouterLink>
+          <RouterLink to="/recipes" class="sidebar-link">
+            <img src="./assets/list.png" alt="Rezepte" class="w-5">
+          </RouterLink>
+          <RouterLink to="/calendar" class="sidebar-link">
+            <img src="./assets/calendar.png" alt="Wochenplan" class="w-5">
+          </RouterLink>
+          <RouterLink to="/shoppinglist" class="sidebar-link">
+            <img src="./assets/bag.png" alt="Einkaufsliste" class="w-6">
+          </RouterLink>
         </div>
-        <div></div>
-      </ul>
+
+        <div class="w-10 h-10 rounded-full bg-slate-100"></div> </div>
     </div>
   </div>
 </template>
 
-<style>
-nav { padding: 20px; background: #f4f4f4; margin-bottom: 20px; }
-nav a { text-decoration: none; color: #333; font-weight: bold; }
-nav a.router-link-active { color: #42b983; } /* Aktiver Link wird grün */
-
-.drawer-side {
-  max-width: 100px;
+<style scoped>
+.router-link-active {
+  position: relative;
 }
 
-.menu {
-  width: auto;
+.router-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+.sidebar-link, .mobile-nav-link {
+  @apply transition-transform duration-200 hover:scale-110 active:scale-95 flex justify-center items-center;
+}
+
+.drawer-side {
+  max-width: 140px;
+}
+
+.drawer-button {
+  display: none;
 }
 </style>
