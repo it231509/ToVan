@@ -5,6 +5,7 @@ import RecipeDetail from '../views/RecipeDetail.vue';
 import WeeklyCalendar from '../views/WeeklyCalendar.vue';
 import ShoppingList from '../views/ShoppingList.vue';
 import Home from '../views/Home.vue'
+import CreateRecipe from '@/views/CreateRecipe.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +14,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
+    },
+    {
+      path: '/create-recipe',
+      name: 'create-recipe',
+      component: CreateRecipe, 
     },
     {
       path: '/recipes',

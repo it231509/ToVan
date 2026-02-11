@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const backend = axios.create({
-  baseURL: '/api/',
+  baseURL: '/api/', 
   timeout: 10000,
 });
 
@@ -21,6 +21,15 @@ export const getRecipeById = async (id) => {
     return result.data;
   } catch (e) {
     throw new Error(e.response?.data?.message || 'Rezept nicht gefunden');
+  }
+};
+
+export const createRecipe = async (item) => {
+  try {
+    const result = await backend.post('recipes', item);
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Rezept konnte nicht erstellt werden');
   }
 };
 

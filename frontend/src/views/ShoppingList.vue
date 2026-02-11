@@ -71,7 +71,7 @@ export default {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 lg:p-8 max-w-4xl">
+  <div class="container mx-auto p-4 lg:p-8">
     
     <div class="flex flex-col md:flex-row justify-between mb-10 gap-6">
       <div>
