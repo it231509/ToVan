@@ -28,7 +28,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="recipe" class="container mx-auto p-4 lg:p-8 max-w-6xl">
+  <div v-if="recipe" class="lg:container mx-auto p-0 lg:p-8 max-w-6xl">
     <button @click="router.back()" class="group flex items-center text-slate-400 hover:text-success mb-8 transition-colors">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />

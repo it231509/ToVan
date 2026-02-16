@@ -158,11 +158,11 @@ export default {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 lg:p-8">
+  <div class="lg:container mx-auto p-0 lg:p-8">
     
     <div class="flex flex-col md:flex-row justify-between mb-10 gap-4">
       <div>
-        <h1 class="text-4xl font-black text-slate-800 tracking-tight">Dein <span class="text-primary">Wochenplan</span></h1>
+        <h1 class="lg:text-4xl text-3xl font-black text-slate-800 tracking-tight">Dein <span class="text-primary">Wochenplan</span></h1>
         <p class="text-slate-500">KW {{ Math.ceil(weekDays[0].getDate() / 7) }} | {{ weekDays[0].getFullYear() }}</p>
       </div>
       
@@ -262,7 +262,7 @@ export default {
         </div>
       </div>
       
-      <div class="bg-secondary/10 rounded-[2.5rem] p-8 flex items-center justify-between border border-secondary/20 md:col-span-2">
+      <div class="bg-secondary/10 rounded-[2.5rem] p-8 flex flex-col gap-3 items-start justify-between border border-secondary/20 md:col-span-2 md:flex-row md:items-center">
         <div>
           <h3 class="font-bold text-secondary text-xl">Einkaufsliste bereitstellen!</h3>
           <p class="text-sm text-secondary/70">Zutaten vom {{ formatDate(weekDays[0]) }} bis {{ formatDate(weekDays[6]) }} hinzufügen.</p>

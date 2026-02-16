@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const backend = axios.create({
-  baseURL: '/api/', 
+  baseURL: 'https://se231326-10988.node.fhstp.cc/', 
   timeout: 10000,
 });
 

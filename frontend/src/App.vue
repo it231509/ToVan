@@ -5,8 +5,19 @@
     <div class="drawer-content flex flex-col">
       <header class="lg:hidden flex justify-between items-center px-6 py-4 bg-white/50 backdrop-blur-md border-b border-slate-100">
         <img class="w-12 h-12" src="./assets/Logo.png" alt="ToVan Logo">
-        <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
-           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="flex flex-row gap-3">
+          <RouterLink 
+            to="/create-recipe" 
+            class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary active:scale-90 transition-transform"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </RouterLink>
+          <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
         </div>
       </header>
 
@@ -17,7 +28,7 @@
       <div class="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] z-50" style="margin-bottom: 8px;">
         <nav class="bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl border border-white/10">
           <RouterLink v-for="item in menuItems" :key="item.path" :to="item.path" class="mobile-nav-item">
-            <div v-html="item.icon" class="w-6 h-6"></div>
+            <div v-html="item.icon" class="w-5 h-5"></div>
             <span v-if="$route.path === item.path" class="text-[10px] mt-1 font-bold">{{ item.name }}</span>
           </RouterLink>
         </nav>
@@ -35,7 +46,7 @@
 
         <nav class="flex flex-col gap-6 w-full px-4">
           <RouterLink v-for="item in menuItems" :key="item.path" :to="item.path" class="desktop-nav-item" :title="item.name">
-            <div v-html="item.icon" class="w-6 h-6"></div>
+            <div v-html="item.icon" class="w-5 h-5"></div>
             <div class="active-indicator"></div>
           </RouterLink>
         </nav>

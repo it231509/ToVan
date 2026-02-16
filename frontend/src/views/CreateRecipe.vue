@@ -61,8 +61,8 @@ export default {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 lg:p-8 max-w-4xl">
-    <h1 class="text-3xl font-black text-slate-800 mb-8">Neues Rezept erstellen</h1>
+  <div class="lg:container mx-auto p-0 lg:p-8 max-w-4xl">
+    <h1 class="lg:text-4xl text-3xl font-black text-slate-800 mb-8">Neues Rezept erstellen</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-8">
       

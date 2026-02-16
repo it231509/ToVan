@@ -32,16 +32,16 @@ export default {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 lg:p-8">
+  <div class="lg:container mx-auto p-0 lg:p-8">
     <div class="flex flex-col md:flex-row justify-between mb-12 gap-6">
       <div>
-        <h1 class="text-4xl font-black text-slate-800 tracking-tight">
+        <h1 class="lg:text-4xl text-3xl font-black text-slate-800 tracking-tight">
           Deine <span class="text-success">Rezepte</span>
         </h1>
         <p class="text-slate-500 mt-1">Entdecke deine kulinarischen Kreationen</p>
       </div>
 
-      <div class="w-full md:w-72">
+      <div class="w-full md:w-72 lg:flex block flex-row gap-4 items-center">
         <div class="relative group">
           <input 
             type="text" 
@@ -54,6 +54,15 @@ export default {
             </svg>
           </div>
         </div>
+         <RouterLink 
+            to="/create-recipe" 
+            class="hidden lg:flex w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 items-center justify-center text-primary active:scale-90 transition-transform"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </RouterLink>
       </div>
     </div>
   
