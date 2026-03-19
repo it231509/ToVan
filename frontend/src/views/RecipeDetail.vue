@@ -71,15 +71,6 @@ onMounted(async () => {
                 <div class="bg-success h-2 rounded-full" :style="{ width: `${Math.min((recipe.protein_per_serving / 80) * 100, 100)}%` }"></div>
               </div>
             </div>
-            <div>
-              <div class="flex justify-between text-sm mb-1">
-                <span class="font-medium text-slate-600">Antientzündlichkeit</span>
-                <span class="font-bold text-success">{{ recipe.anti_inflammatory_score }}</span>
-              </div>
-              <div class="w-full bg-white rounded-full h-2">
-                <div class="bg-success h-2 rounded-full" :style="{ width: `${recipe.anti_inflammatory_score * 20}%` }"></div>
-              </div>
-            </div>
             <!--<div class="grid grid-cols-2 gap-4">
               <div class="bg-white p-4 rounded-2xl">
                 <p class="text-[10px] uppercase font-bold text-slate-400">Kohlenhydrate</p>

@@ -1,15 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// HomeView laden wir direkt
 import RecipeList from '../views/RecipeList.vue';
 import RecipeDetail from '../views/RecipeDetail.vue';
 import WeeklyCalendar from '../views/WeeklyCalendar.vue';
 import ShoppingList from '../views/ShoppingList.vue';
 import Home from '../views/Home.vue'
 import CreateRecipe from '@/views/CreateRecipe.vue';
+import Login from '@/views/Login.vue';
+import Register from '@/views/Register.vue';
+import { supabase } from '@/supabase';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/login', component: Login, meta: { public: true } },
+    { path: '/register', component: Register, meta: { public: true } },
     {
       path: '/',
       name: 'home',
@@ -42,6 +46,21 @@ const router = createRouter({
       component: ShoppingList, 
     },
   ],
-})
+});
+
+router.beforeEach(async (to, from, next) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const isLoggedIn = !!session;
+
+  const isPublic = to.meta.public;
+
+  if (!isLoggedIn && !isPublic) {
+    next('/login');
+  } else if (isLoggedIn && isPublic) {
+    next('/');
+  } else {
+    next();
+  }
+});
 
 export default router

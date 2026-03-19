@@ -1,11 +1,17 @@
 <script>
-import { getShoppingList, toggleShoppingListItem, clearCheckedItems, removeShoppingListItem } from '@/http';
+import { getShoppingList, toggleShoppingListItem, clearCheckedItems, removeShoppingListItem, addItemToShoppingList } from '@/http';
 
 export default {
   data() {
     return {
       items: [],
-      loading: false
+      loading: false,
+      newItem: {
+        item_name: '',
+        amount: null,
+        unit: '',
+        category: 'Sonstiges'
+      }
     }
   },
 
@@ -36,6 +42,17 @@ export default {
         this.items = await getShoppingList();
       } catch (e) {
         console.error('Fehler beim Laden der Liste');
+      }
+    },
+
+    async addItem() {
+      if (!this.newItem.item_name) return;
+      try {
+        const addedItem = await addItemToShoppingList(this.newItem);
+        this.items.push(addedItem);
+        this.newItem = { item_name: '', amount: null, unit: '', category: 'Sonstiges' };
+      } catch (e) {
+        console.error('Fehler beim Hinzufügen');
       }
     },
 
@@ -99,6 +116,54 @@ export default {
       </div>
     </div>
 
+    <div class="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm mb-8 flex flex-wrap md:flex-nowrap flex-col md:flex-row gap-3 items-center">
+      <div class="flex-grow min-w-[200px] w-[100%] md:w-auto">
+        <input 
+          v-model="newItem.item_name" 
+          @keyup.enter="addItem"
+          type="text" 
+          placeholder="Etwas zur Liste hinzufügen..." 
+          class="input w-[100%] bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-secondary/20"
+        />
+      </div>
+      <div class="w-[100%] md:w-24">
+        <input 
+          v-model.number="newItem.amount" 
+          type="number" 
+          placeholder="Menge" 
+          class="input w-[100%] bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-secondary/20"
+        />
+      </div>
+      <div class="w-[100%] md:w-28">
+        <select v-model="newItem.unit" class="select w-[100%] bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-secondary/20">
+          <option value="">Einheit</option>
+          <option value="g">g</option>
+          <option value="kg">kg</option>
+          <option value="ml">ml</option>
+          <option value="L">L</option>
+          <option value="Stk">Stk</option>
+          <option value="Pkg">Pkg</option>
+        </select>
+      </div>
+      <div class="w-[100%] md:w-36">
+        <select v-model="newItem.category" class="select w-[100%] bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-secondary/20">
+          <option value="Sonstiges">Kategorie</option>
+          <option value="Gemüse & Obst">Gemüse & Obst</option>
+          <option value="Kühlregal">Kühlregal</option>
+          <option value="Vorrat">Vorrat</option>
+          <option value="Backwaren">Backwaren</option>
+          <option value="Getränke">Getränke</option>
+        </select>
+      </div>
+      <button 
+        @click="addItem"
+        :disabled="!newItem.item_name"
+        class="btn btn-secondary rounded-2xl px-8 text-white font-bold h-12 min-h-0 disabled:bg-slate-100 disabled:text-slate-400 border-none w-[100%] md:w-auto"
+      >
+        Hinzufügen
+      </button>
+    </div>
+
     <div class="grid grid-cols-1 gap-8">
       <div v-for="(list, category) in groupedItems" :key="category" class="relative">
         
@@ -132,7 +197,7 @@ export default {
               </div>
 
               <div class="flex items-center gap-3">
-                <div class="text-sm font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full group-hover:bg-white transition-colors">
+                <div v-if="item.amount" class="text-sm font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full group-hover:bg-white transition-colors">
                   {{ item.amount }} {{ item.unit }}
                 </div>
                 

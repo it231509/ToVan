@@ -1,32 +1,39 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { RecipesService } from './recipes.service';
+import { SupabaseGuard } from '../auth/supabase.guard';
 
 @Controller('recipes')
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
 
   @Get()
-  getAll() {
-    return this.recipesService.findAll();
+  @UseGuards(SupabaseGuard)
+  getAll(@Req() req) {
+    return this.recipesService.findAll(req.user.id);
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    return this.recipesService.findOne(id);
+  @UseGuards(SupabaseGuard)
+  getOne(@Param('id') id: string, @Req() req) {
+    return this.recipesService.findOne(id, req.user.id);
   }
 
   @Post()
-  create(@Body() body: any) {
-    return this.recipesService.create(body);
+  @UseGuards(SupabaseGuard)
+  create(@Body() body: any, @Req() req) {
+    console.log('User aus Token:', req.user);
+    return this.recipesService.create(body, req.user.id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.recipesService.update(id, body);
+  @UseGuards(SupabaseGuard)
+  update(@Param('id') id: string, @Body() body: any, @Req() req) {
+    return this.recipesService.update(id, body, req.user.id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.recipesService.remove(id);
+  @UseGuards(SupabaseGuard)
+  remove(@Param('id') id: string, @Req() req) {
+    return this.recipesService.remove(id, req.user.id);
   }
 }

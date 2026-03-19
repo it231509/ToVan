@@ -8,8 +8,7 @@ export default {
         title: '',
         description: '',
         protein_per_serving: 0,
-        anti_inflammatory_score: 3,
-        servings: 2,
+        servings: 0,
         prep_time: 20,
         image_url: '',
         ingredients: [{ ingredient_name: '', amount: '', unit: '', is_anti_inflammatory: '' }],
@@ -36,7 +35,6 @@ export default {
     removeStep(index) {
       if (this.recipe.steps.length > 1) {
         this.recipe.steps.splice(index, 1);
-        // Step-Order korrigieren
         this.recipe.steps.forEach((step, i) => step.step_number = i + 1);
       }
     },
@@ -45,8 +43,6 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        // Das Backend macht: const { data: recipe } = await ...insert([mainData])
-        // Wir senden das Objekt genau so, wie RecipesService.create() es splittet
         await createRecipe(this.recipe);
         this.$router.push('/recipes');
       } catch (e) {
@@ -67,19 +63,24 @@ export default {
     <form @submit.prevent="handleSubmit" class="space-y-8">
       
       <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="form-control md:col-span-2">
+        <div class="form-control md:col-span-2 flex gap-[0px] md:gap-[16px] flex-col md:flex-row">
           <label class="label font-bold text-slate-500">Titel</label>
-          <input v-model="recipe.title" type="text" class="input input-bordered rounded-xl" required />
-        </div>
-        
-        <div class="form-control">
-          <label class="label font-bold text-slate-500">Protein / Port.</label>
-          <input v-model.number="recipe.protein_per_serving" type="number" class="input input-bordered rounded-xl" />
+          <input v-model="recipe.title" type="text" class="input input-bordered rounded-xl" style="width: 100%;" required />
         </div>
 
-        <div class="form-control">
+        <div class="form-control flex gap-[0px] md:gap-[16px] flex-col md:flex-row">
+          <label class="label font-bold text-slate-500">Portionen</label>
+          <input v-model.number="recipe.servings" type="number" class="input input-bordered rounded-xl" style="width: 100%;" />
+        </div>
+        
+        <div class="form-control flex gap-[0px] md:gap-[16px] flex-col md:flex-row">
+          <label class="label font-bold text-slate-500">Protein / Port.</label>
+          <input v-model.number="recipe.protein_per_serving" type="number" class="input input-bordered rounded-xl" style="width: 100%;" />
+        </div>
+
+        <div class="form-control flex gap-[0px] md:gap-[16px] flex-col md:flex-row">
           <label class="label font-bold text-slate-500">Dauer (Min)</label>
-          <input v-model.number="recipe.prep_time" type="number" class="input input-bordered rounded-xl" />
+          <input v-model.number="recipe.prep_time" type="number" class="input input-bordered rounded-xl" style="width: 100%;" />
         </div>
       </div>
 
@@ -112,7 +113,7 @@ export default {
       </div>
 
       <button type="submit" class="btn btn-primary w-full rounded-2xl text-white font-black" :disabled="loading">
-        {{ loading ? 'Speichert...' : 'Rezept Veröffentlichen' }}
+        {{ loading ? 'Speichert...' : 'Rezept Erstellen' }}
       </button>
     </form>
   </div>

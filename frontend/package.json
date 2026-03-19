@@ -10,6 +10,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.95.3",
     "axios": "^1.13.4",
     "daisyui": "^5.5.14",
     "pinia": "^3.0.4",

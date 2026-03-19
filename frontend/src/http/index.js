@@ -1,9 +1,25 @@
 import axios from 'axios';
+import { supabase } from '@/supabase';
 
 const backend = axios.create({
-  baseURL: 'https://se231326-10988.node.fhstp.cc/', 
+  baseURL: 'http://localhost:3000/', /*https://se231326-10988.node.fhstp.cc/*/
   timeout: 10000,
 });
+
+
+backend.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  } else {
+    console.warn("Keine aktive Session gefunden!");
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 
 // --- Recipe Endpoints ---
 export const getAllRecipes = async () => {
@@ -129,3 +145,5 @@ export const removeMealFromPlan = async (id) => {
     throw new Error(e.response?.data?.message || 'Mahlzeit konnte nicht entfernt werden');
   }
 };
+
+export default backend;

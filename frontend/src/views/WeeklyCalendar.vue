@@ -166,7 +166,7 @@ export default {
         <p class="text-slate-500">KW {{ Math.ceil(weekDays[0].getDate() / 7) }} | {{ weekDays[0].getFullYear() }}</p>
       </div>
       
-      <div class="join shadow-sm border border-slate-100 bg-white p-1 rounded-2xl flex align-middle">
+      <div class="join shadow-sm border border-slate-100 bg-white p-1 rounded-2xl flex align-middle justify-evenly h-[50px]">
         <button @click="prevWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-slate-400 hover:bg-slate-50 min-w-[3rem]">
           «
         </button>
@@ -254,11 +254,11 @@ export default {
     </dialog>
 
     <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="stats shadow bg-base-100 border border-slate-100 rounded-3xl overflow-hidden">
+      <div class="stats shadow bg-base-100 border border-slate-100 rounded-3xl overflow-hidden hide-on-mobile">
         <div class="stat">
-          <div class="stat-title font-medium">Ø Anti-Inflammatory Score</div>
+          <div class="stat-title font-medium">Placeholder</div>
           <div class="stat-value text-primary">4.8</div>
-          <div class="stat-desc text-success font-bold">↗︎ 12% mehr als letzte Woche</div>
+          <div class="stat-desc text-success font-bold">↗︎ x% mehr als letzte Woche</div>
         </div>
       </div>
       
@@ -267,7 +267,7 @@ export default {
           <h3 class="font-bold text-secondary text-xl">Einkaufsliste bereitstellen!</h3>
           <p class="text-sm text-secondary/70">Zutaten vom {{ formatDate(weekDays[0]) }} bis {{ formatDate(weekDays[6]) }} hinzufügen.</p>
         </div>
-        <button @click="createShoppingList" class="btn btn-secondary shadow-lg rounded-2xl px-8">Hinzufügen</button>
+        <button @click="createShoppingList" class="btn btn-secondary shadow-lg rounded-2xl px-8 w-[100%] md:w-auto">Hinzufügen</button>
       </div>
     </div>
   </div>
@@ -275,4 +275,10 @@ export default {
 
 <style scoped>
 .modal { transition: all 0.3s ease-in-out; }
+
+@media (max-width: 980px) {
+  .hide-on-mobile { 
+    display: none;
+  }
+}
 </style>

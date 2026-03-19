@@ -1,5 +1,5 @@
 <template>
-  <div class="drawer lg:drawer-open bg-[#FDFDFD] min-h-screen">
+  <div v-if="session" class="drawer lg:drawer-open bg-[#FDFDFD] min-h-screen">
     <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
     
     <div class="drawer-content flex flex-col">
@@ -15,8 +15,12 @@
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </RouterLink>
-          <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div @click="handleLogout" class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-red-500">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
           </div>
         </div>
       </header>
@@ -51,15 +55,50 @@
           </RouterLink>
         </nav>
 
-        <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center mt-16">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
+        <div 
+      @click="handleLogout" 
+      class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center mt-16 cursor-pointer hover:bg-red-50 hover:border-red-100 transition-colors group"
+      title="Logout"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-red-500">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+    </div>
       </aside>
     </div>
+  </div>
+
+  <div v-else>
+    <RouterView />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import { supabase } from '@/supabase';
+import { useRouter } from 'vue-router';
+
+const session = ref(null);
+const router = useRouter();
+
+const handleLogout = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) console.error('Fehler beim Logout:', error.message);
+};
+
+onMounted(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    session.value = data.session;
+  });
+
+  supabase.auth.onAuthStateChange((_event, _session) => {
+    session.value = _session;
+    if (!_session) router.push('/login');
+  });
+});
+
 const menuItems = [
   { 
     name: 'Home', 
@@ -85,13 +124,14 @@ const menuItems = [
 </script>
 
 <style scoped>
+/* Deine CSS Styles bleiben komplett identisch */
 .desktop-nav-item {
   height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
   transition: all 0.2s ease;
   position: relative;
 }
@@ -102,7 +142,7 @@ const menuItems = [
 }
 
 .router-link-active.desktop-nav-item {
-  color: #570df8; /* primary */
+  color: #570df8;
   background-color: #f5f3ff;
 }
 
@@ -128,7 +168,7 @@ const menuItems = [
   align-items: center;
   justify-content: center;
   height: 48px;
-  color: #94a3b8; /* slate-400 */
+  color: #94a3b8;
   transition: all 0.2s ease;
 }
 

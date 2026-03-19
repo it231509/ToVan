@@ -1,30 +1,36 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { MealPlanService } from './meal-plan.service';
+import { SupabaseGuard } from '../auth/supabase.guard';
 
 @Controller('meal-plan')
 export class MealPlanController {
   constructor(private readonly mealPlanService: MealPlanService) {}
 
   @Get()
+  @UseGuards(SupabaseGuard)
   getRange(
+    @Req() req,
     @Query('start') start: string,
     @Query('end') end: string
   ) {
-    return this.mealPlanService.getPlanForRange(start, end);
+    return this.mealPlanService.getPlanForRange(req.user.id, start, end);
   }
 
   @Post()
-  add(@Body() body: any) {
-    return this.mealPlanService.addMeal(body);
+  @UseGuards(SupabaseGuard)
+  add(@Req() req, @Body() body: any) {
+    return this.mealPlanService.addMeal(req.user.id, body);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.mealPlanService.updateMeal(id, body);
+  @UseGuards(SupabaseGuard)
+  update(@Req() req, @Param('id') id: string, @Body() body: any) {
+    return this.mealPlanService.updateMeal(req.user.id, id, body);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.mealPlanService.removeMeal(id);
+  @UseGuards(SupabaseGuard)
+  remove(@Req() req, @Param('id') id: string) {
+    return this.mealPlanService.removeMeal(req.user.id, id);
   }
 }
