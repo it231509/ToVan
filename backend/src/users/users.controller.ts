@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Req, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Req, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { SupabaseGuard } from '../auth/supabase.guard';
 
@@ -6,39 +6,50 @@ import { SupabaseGuard } from '../auth/supabase.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  /**
-   * Initiales Setup nach dem Registrieren
-   */
+  private getHouseholdIdFromHeader(req: any): string | undefined {
+    return req.headers['x-household-id'];
+  }
+
   @Post('setup-profile')
   @UseGuards(SupabaseGuard)
   async setupProfile(@Req() req) {
     return this.usersService.initializeUser(req.user.id, req.user.email);
   }
 
-  /**
-   * Haushalts-Daten für die Startseite abrufen
-   */
+  @Get('my-households')
+  @UseGuards(SupabaseGuard)
+  async getMyHouseholds(@Req() req) {
+    return this.usersService.getMyHouseholds(req.user.id);
+  }
+
   @Get('household')
   @UseGuards(SupabaseGuard)
   async getHousehold(@Req() req) {
-    return this.usersService.getHouseholdDetails(req.user.id);
+    const householdId = this.getHouseholdIdFromHeader(req);
+    return this.usersService.getHouseholdDetails(req.user.id, householdId);
   }
 
-  /**
-   * Haushalt umbenennen
-   */
-  @Patch('household/name')
-  @UseGuards(SupabaseGuard)
-  async updateName(@Req() req, @Body('name') name: string) {
-    return this.usersService.updateHouseholdName(req.user.id, name);
+@Patch('household/name')
+@UseGuards(SupabaseGuard)
+async updateName(@Req() req, @Body('name') name: string) {
+  const householdId = this.getHouseholdIdFromHeader(req);
+  
+  if (!householdId) {
+    throw new BadRequestException('Keine x-household-id im Header gefunden');
+  }
+  
+  return this.usersService.updateHouseholdName(req.user.id, name, householdId);
+}
+
+@Post('invite')
+@UseGuards(SupabaseGuard)
+async inviteUser(@Req() req, @Body('email') email: string) {
+  const householdId = this.getHouseholdIdFromHeader(req);
+
+  if (!householdId) {
+    throw new BadRequestException('Keine x-household-id im Header gefunden');
   }
 
-  /**
-   * Mitglied per E-Mail einladen
-   */
-  @Post('invite')
-  @UseGuards(SupabaseGuard)
-  async inviteUser(@Req() req, @Body('email') email: string) {
-    return this.usersService.addUserToHousehold(req.user.id, email);
-  }
+  return this.usersService.addUserToHousehold(req.user.id, email, householdId);
+}
 }

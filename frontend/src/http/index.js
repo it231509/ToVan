@@ -2,24 +2,63 @@ import axios from 'axios';
 import { supabase } from '@/supabase';
 
 const backend = axios.create({
-  baseURL: 'http://localhost:3000/', /*https://se231326-10988.node.fhstp.cc/*/
+  /*baseURL: 'https://se231326-10988.node.fhstp.cc/', */
+  baseURL: 'http://localhost:3000/',
   timeout: 10000,
 });
 
-
 backend.interceptors.request.use(async (config) => {
   const { data: { session } } = await supabase.auth.getSession();
-  
   if (session?.access_token) {
     config.headers.Authorization = `Bearer ${session.access_token}`;
-  } else {
-    console.warn("Keine aktive Session gefunden!");
   }
+
+  const activeHouseholdId = localStorage.getItem('active_household_id');
+  if (activeHouseholdId) {
+    config.headers['x-household-id'] = activeHouseholdId;
+  }
+
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
+// --- User & Household Endpoints ---
+export const getMyHouseholds = async () => {
+  try {
+    const result = await backend.get('users/my-households');
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Fehler beim Laden deiner Haushalte');
+  }
+};
+
+export const getHouseholdDetails = async () => {
+  try {
+    const result = await backend.get('users/household');
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Haushalt konnte nicht geladen werden');
+  }
+};
+
+export const updateHouseholdName = async (name) => {
+  try {
+    const result = await backend.patch('users/household/name', { name });
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Name konnte nicht geändert werden');
+  }
+};
+
+export const inviteUserToHousehold = async (email) => {
+  try {
+    const result = await backend.post('users/invite', { email });
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'User konnte nicht eingeladen werden');
+  }
+};
 
 // --- Recipe Endpoints ---
 export const getAllRecipes = async () => {
@@ -103,7 +142,7 @@ export const generateShoppingListFromMealPlan = async (startDate, endDate) => {
     });
     return result.data;
   } catch (e) {
-    throw new Error(e.response?.data?.message || 'Liste konnte nicht aus Wochenplan generiert werden');
+    throw new Error(e.response?.data?.message || 'Liste konnte nicht generiert werden');
   }
 };
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Patch, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Patch, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { ShoppingListService } from './shopping-list.service';
 import { SupabaseGuard } from '../auth/supabase.guard';
 
@@ -7,39 +7,47 @@ import { SupabaseGuard } from '../auth/supabase.guard';
 export class ShoppingListController {
   constructor(private readonly shoppingListService: ShoppingListService) {}
 
+  private getHouseholdId(req: any): string {
+    const id = req.headers['x-household-id'];
+    if (!id) {
+      throw new BadRequestException('Keine Haushalts-ID im Header (x-household-id) gefunden.');
+    }
+    return id;
+  }
+
   @Get()
-  @UseGuards(SupabaseGuard)
   async getList(@Req() req) {
-    return this.shoppingListService.getList(req.user.id);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.getList(req.user.id, householdId);
   }
 
   @Post()
-  @UseGuards(SupabaseGuard)
   async addItem(@Req() req, @Body() body: { item_name: string, amount?: number, unit?: string, category?: string }) {
-    return this.shoppingListService.addItem(req.user.id, body);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.addItem(req.user.id, householdId, body);
   }
 
   @Post('generate')
-  @UseGuards(SupabaseGuard)
   async generate(@Req() req, @Body() body: { start: string, end: string }) {
-    return this.shoppingListService.generateFromMealPlan(req.user.id, body.start, body.end);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.generateFromMealPlan(req.user.id, householdId, body.start, body.end);
   }
 
   @Patch(':id/toggle')
-  @UseGuards(SupabaseGuard)
   async toggleItem(@Req() req, @Param('id') id: string, @Body('is_checked') isChecked: boolean) {
-    return this.shoppingListService.toggleItem(req.user.id, id, isChecked);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.toggleItem(req.user.id, householdId, id, isChecked);
   }
 
   @Delete(':id')
-  @UseGuards(SupabaseGuard)
   async removeItem(@Req() req, @Param('id') id: string) {
-    return this.shoppingListService.removeItem(req.user.id, id);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.removeItem(req.user.id, householdId, id);
   }
 
   @Delete('actions/clear-checked')
-  @UseGuards(SupabaseGuard)
   async clearChecked(@Req() req) {
-    return this.shoppingListService.clearChecked(req.user.id);
+    const householdId = this.getHouseholdId(req);
+    return this.shoppingListService.clearChecked(req.user.id, householdId);
   }
 }

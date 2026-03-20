@@ -8,6 +8,36 @@ import {
 } from '@/http';
 
 export default {
+  async beforeRouteEnter(to, from, next) {
+    try {
+      const getISO = (date) => {
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+        return localDate.toISOString().split('T')[0];
+      };
+
+      const now = new Date();
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(now.setDate(diff));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const [plan, recipes] = await Promise.all([
+        getMealPlan(getISO(monday), getISO(sunday)),
+        getAllRecipes()
+      ]);
+
+      next(vm => {
+        vm.mealPlanRaw = plan;
+        vm.allRecipes = recipes;
+      });
+    } catch (e) {
+      console.error('Preload Mealplan fehlgeschlagen', e);
+      next();
+    }
+  },
+
   data() {
     return {
       currentReferenceDate: new Date(),
@@ -34,6 +64,11 @@ export default {
       });
     },
 
+    currentWeekNumber() {
+      const date = new Date(this.weekDays[0]);
+      return this.getWeekNumber(date);
+    },
+
     formattedMealPlan() {
       const plan = {};
       const order = { 'Frühstück': 1, 'Mittagessen': 2, 'Abendessen': 3 };
@@ -45,7 +80,9 @@ export default {
       });
 
       Object.keys(plan).forEach(date => {
-        plan[date].sort((a, b) => (order[a.meal_type] || 99) - (order[b.meal_type] || 99));
+        if (plan[date]) {
+          plan[date].sort((a, b) => (order[a.meal_type] || 99) - (order[b.meal_type] || 99));
+        }
       });
 
       return plan;
@@ -58,16 +95,19 @@ export default {
     }
   },
 
-  created() {
-    this.fetchPlan();
-    this.fetchAllRecipes(); 
-  },
-
   watch: {
     currentReferenceDate: 'fetchPlan'
   },
 
   methods: {
+    getWeekNumber(d) {
+      d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return weekNo;
+    },
+
     async fetchPlan() {
       try {
         const start = this.getISODate(this.weekDays[0]);
@@ -101,7 +141,7 @@ export default {
           recipe_id: recipeId
         });
         this.showModal = false;
-        this.fetchPlan();
+        await this.fetchPlan(); 
       } catch (e) {
         console.error('Fehler beim Speichern');
       }
@@ -111,7 +151,7 @@ export default {
       if (!confirm('Möchtest du diese Mahlzeit entfernen?')) return;
       try {
         await removeMealFromPlan(id);
-        this.fetchPlan();
+        await this.fetchPlan();
       } catch (e) {
         console.error('Fehler beim Löschen');
       }
@@ -158,44 +198,41 @@ export default {
 </script>
 
 <template>
-  <div class="lg:container mx-auto p-0 lg:p-8">
+  <div class="lg:container mx-auto p-0 lg:p-8 transition-colors duration-300">
     
-    <div class="flex flex-col md:flex-row justify-between mb-10 gap-4">
+    <div class="flex flex-col md:flex-row justify-between mb-10 gap-4 px-4 lg:px-0">
       <div>
-        <h1 class="lg:text-4xl text-3xl font-black text-slate-800 tracking-tight">Dein <span class="text-primary">Wochenplan</span></h1>
-        <p class="text-slate-500">KW {{ Math.ceil(weekDays[0].getDate() / 7) }} | {{ weekDays[0].getFullYear() }}</p>
+        <h1 class="lg:text-4xl text-3xl font-black text-base-content tracking-tight">Dein <span class="text-primary">Wochenplan</span></h1>
+        <p class="text-base-content/50 font-medium">KW {{ currentWeekNumber }} | {{ weekDays[0].getFullYear() }}</p>
       </div>
       
-      <div class="join shadow-sm border border-slate-100 bg-white p-1 rounded-2xl flex align-middle justify-evenly h-[50px]">
-        <button @click="prevWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-slate-400 hover:bg-slate-50 min-w-[3rem]">
+      <div class="join shadow-sm border border-base-300 bg-base-100 p-1 rounded-2xl flex align-middle justify-evenly h-[50px]">
+        <button @click="prevWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem]">
           «
         </button>
-        
-        <button @click="resetToToday" class="btn join-item btn-sm md:btn-md border-none bg-slate-50 text-slate-700 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl px-6 font-bold tracking-tight">
+        <button @click="resetToToday" class="btn join-item btn-sm md:btn-md border-none bg-base-200 text-base-content hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl px-6 font-bold tracking-tight">
           Diese Woche
         </button>
-        
-        <button @click="nextWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-slate-400 hover:bg-slate-50 min-w-[3rem]">
+        <button @click="nextWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem]">
           »
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6 px-4 lg:px-0">
       <div v-for="day in weekDays" :key="day.toISOString()" class="flex flex-col gap-2">
         <div class="flex items-center justify-between px-2">
-          <span class="font-bold text-slate-400 text-sm uppercase tracking-widest">{{ formatDayName(day) }}</span>
-          <span class="text-xs font-medium text-slate-400" :class="{'text-primary font-black': day.toDateString() === new Date().toDateString()}">
+          <span class="font-bold text-base-content/40 text-sm uppercase tracking-widest">{{ formatDayName(day) }}</span>
+          <span class="text-xs font-medium text-base-content/40" :class="{'text-primary font-black': day.toDateString() === new Date().toDateString()}">
             {{ formatDate(day) }}
           </span>
         </div>
 
-        <div class="bg-white min-h-[300px] rounded-[20px] border-2 border-dashed border-slate-100 p-3 flex flex-col justify-around gap-2">
-          
+        <div class="bg-base-100 min-h-[300px] rounded-[20px] border-2 border-dashed border-base-300 p-3 flex flex-col justify-around gap-2 shadow-sm">
           <div v-for="type in ['Frühstück', 'Mittagessen', 'Abendessen']" :key="type">
             
             <div v-if="formattedMealPlan[getISODate(day)]?.find(m => m.meal_type === type)"
-                 class="card bg-primary text-primary-content shadow-sm group relative overflow-hidden transition-all"
+                 class="card bg-primary text-primary-content shadow-sm group relative overflow-hidden transition-all cursor-pointer"
                  @click="$router.push(`/recipe/${formattedMealPlan[getISODate(day)].find(m => m.meal_type === type).recipe_id}`)">
               <div class="p-3">
                 <div class="text-[9px] uppercase font-black opacity-60 mb-1">{{ type }}</div>
@@ -203,13 +240,12 @@ export default {
                   {{ formattedMealPlan[getISODate(day)].find(m => m.meal_type === type).recipe?.title }}
                 </div>
                 <div class="flex gap-1 mt-2">
-                  <div class="badge badge-xs bg-white/20 border-none text-[8px]">
+                  <div class="badge badge-xs bg-white/20 border-none text-[8px] text-white">
                     {{ formattedMealPlan[getISODate(day)].find(m => m.meal_type === type).recipe?.protein_per_serving }}g Protein
                   </div>
                 </div>
-                
-                <button @click="deleteMeal(formattedMealPlan[getISODate(day)].find(m => m.meal_type === type).id)" 
-                        class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click.stop="deleteMeal(formattedMealPlan[getISODate(day)].find(m => m.meal_type === type).id)" 
+                        class="absolute top-2 right-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 hover:bg-black/20 rounded-full p-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -218,45 +254,47 @@ export default {
             </div>
 
             <button v-else @click="openPicker(day, type)" 
-                    class="btn btn-ghost btn-xs btn-block justify-start text-slate-400 hover:text-primary hover:bg-primary/5 font-bold py-4 px-2 mb-1">
+                    class="btn btn-ghost btn-xs btn-block justify-start text-base-content/30 hover:text-primary hover:bg-primary/5 font-bold py-4 px-2 mb-1">
               + {{ type }}
             </button>
-            
           </div>
-
         </div>
       </div>
     </div>
 
     <dialog class="modal" :class="{ 'modal-open': showModal }">
-      <div class="modal-box max-w-xl bg-slate-50 rounded-[2.5rem] p-0 overflow-hidden shadow-2xl">
-        <div class="p-6 bg-white border-b border-slate-100 flex justify-between items-center">
+      <div class="modal-box max-w-xl bg-base-200 rounded-[2.5rem] p-0 overflow-hidden shadow-2xl border border-base-300">
+        <div class="p-6 bg-base-100 border-b border-base-300 flex justify-between items-center">
           <div>
-            <h3 class="font-black text-xl text-slate-800">{{ selectedType }} wählen</h3>
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">{{ formatDate(selectedDay) }}</p>
+            <h3 class="font-black text-xl text-base-content">{{ selectedType }} wählen</h3>
+            <p class="text-xs text-base-content/40 font-bold uppercase tracking-widest">{{ formatDate(selectedDay) }}</p>
           </div>
           <button @click="showModal = false" class="btn btn-sm btn-circle btn-ghost">✕</button>
         </div>
-        <div class="p-4 bg-white">
-          <input v-model="searchQuery" type="text" placeholder="Rezept suchen..." class="input w-full rounded-2xl border-slate-200 focus:border-primary focus:ring-0" />
+        <div class="p-4 bg-base-100/50">
+          <input v-model="searchQuery" type="text" placeholder="Rezept suchen..." 
+                 class="input w-full rounded-2xl bg-base-100 border-base-300 focus:border-primary focus:ring-0 text-base-content" />
         </div>
         <div class="p-4 max-h-[450px] overflow-y-auto space-y-3">
-          <div v-for="recipe in filteredRecipes" :key="recipe.id" @click="selectRecipe(recipe.id)" class="flex items-center gap-4 bg-white p-3 rounded-[1.5rem] border border-transparent hover:border-primary/40 cursor-pointer transition-all hover:shadow-lg group">
+          <div v-for="recipe in filteredRecipes" :key="recipe.id" @click="selectRecipe(recipe.id)" 
+               class="flex items-center gap-4 bg-base-100 p-3 rounded-[1.5rem] border border-transparent hover:border-primary/40 cursor-pointer transition-all hover:shadow-lg group">
             <img :src="recipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100'" class="w-12 h-12 rounded-xl object-cover">
             <div class="flex-grow">
-              <h4 class="font-bold text-slate-800 text-sm">{{ recipe.title }}</h4>
-              <span class="text-[9px] font-black text-slate-400 uppercase">{{ recipe.protein_per_serving }}g Protein</span>
+              <h4 class="font-bold text-base-content text-sm group-hover:text-primary transition-colors">{{ recipe.title }}</h4>
+              <span class="text-[9px] font-black text-base-content/30 uppercase">{{ recipe.protein_per_serving }}g Protein</span>
             </div>
           </div>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop bg-slate-900/20 backdrop-blur-sm"><button @click="showModal = false">close</button></form>
+      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm">
+        <button @click="showModal = false">close</button>
+      </form>
     </dialog>
 
-    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="stats shadow bg-base-100 border border-slate-100 rounded-3xl overflow-hidden hide-on-mobile">
+    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 px-4 lg:px-0">
+      <div class="stats shadow bg-base-100 border border-base-300 rounded-3xl overflow-hidden hide-on-mobile">
         <div class="stat">
-          <div class="stat-title font-medium">Placeholder</div>
+          <div class="stat-title font-medium text-base-content/50">Placeholder</div>
           <div class="stat-value text-primary">4.8</div>
           <div class="stat-desc text-success font-bold">↗︎ x% mehr als letzte Woche</div>
         </div>
@@ -265,20 +303,18 @@ export default {
       <div class="bg-secondary/10 rounded-[2.5rem] p-8 flex flex-col gap-3 items-start justify-between border border-secondary/20 md:col-span-2 md:flex-row md:items-center">
         <div>
           <h3 class="font-bold text-secondary text-xl">Einkaufsliste bereitstellen!</h3>
-          <p class="text-sm text-secondary/70">Zutaten vom {{ formatDate(weekDays[0]) }} bis {{ formatDate(weekDays[6]) }} hinzufügen.</p>
+          <p class="text-sm text-base-content/60">Zutaten vom {{ formatDate(weekDays[0]) }} bis {{ formatDate(weekDays[6]) }} hinzufügen.</p>
         </div>
-        <button @click="createShoppingList" class="btn btn-secondary shadow-lg rounded-2xl px-8 w-[100%] md:w-auto">Hinzufügen</button>
+        <button @click="createShoppingList" class="btn btn-secondary shadow-lg rounded-2xl px-8 w-full md:w-auto text-white font-bold">Hinzufügen</button>
       </div>
     </div>
+
   </div>
 </template>
 
 <style scoped>
 .modal { transition: all 0.3s ease-in-out; }
-
 @media (max-width: 980px) {
-  .hide-on-mobile { 
-    display: none;
-  }
+  .hide-on-mobile { display: none; }
 }
 </style>

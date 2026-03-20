@@ -1,25 +1,29 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { SupabaseService } from "src/supabase/supabase.service";
 
 @Injectable()
 export class RecipesService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  private async getHouseholdId(userId: string): Promise<string> {
+  private async validateMembership(userId: string, householdId: string): Promise<void> {
+    if (!householdId) {
+      throw new BadRequestException('Keine Haushalts-ID (Header) angegeben');
+    }
+
     const { data, error } = await this.supabaseService.client
       .from('household_members')
-      .select('household_id')
+      .select('id')
       .eq('user_id', userId)
+      .eq('household_id', householdId)
       .maybeSingle();
 
     if (error || !data) {
-      throw new NotFoundException('User gehört zu keinem Haushalt. Bitte Profil-Setup durchführen.');
+      throw new ForbiddenException('Zugriff auf diesen Haushalt verweigert');
     }
-    return data.household_id;
   }
 
-  async findAll(userId: string) {
-    const householdId = await this.getHouseholdId(userId);
+  async findAll(userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
 
     const { data, error } = await this.supabaseService.client
       .from('recipes')
@@ -30,8 +34,8 @@ export class RecipesService {
     return data;
   }
 
-  async findOne(id: string, userId: string) {
-    const householdId = await this.getHouseholdId(userId);
+  async findOne(id: string, userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
 
     const { data, error } = await this.supabaseService.client
       .from('recipes')
@@ -44,8 +48,9 @@ export class RecipesService {
     return data;
   }
 
-  async create(recipeData: any, userId: string) {
-    const householdId = await this.getHouseholdId(userId);
+  async create(recipeData: any, userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
+    
     const { ingredients, steps, ...mainData } = recipeData;
 
     const { data: recipe, error: recipeError } = await this.supabaseService.client
@@ -64,34 +69,33 @@ export class RecipesService {
         recipe_id: recipe.id
       }));
 
-      const { error: ingError } = await this.supabaseService.client
-        .from('recipe_ingredients')
-        .insert(ingredientsWithId);
-
-      if (ingError) {
-        console.error("Zutaten konnten nicht gespeichert werden:", ingError);
-      }
+      await this.supabaseService.client.from('recipe_ingredients').insert(ingredientsWithId);
     }
 
     if (steps && steps.length > 0) {
       const stepsWithId = steps.map((step, index) => ({
         step_description: step.step_description || step.description || step,
         step_order: step.step_order || index + 1,
+        step_number: step.step_order || index + 1,
         recipe_id: recipe.id
       }));
 
-      const { error: stepError } = await this.supabaseService.client
+      const { error: stepsError } = await this.supabaseService.client
         .from('recipe_steps')
         .insert(stepsWithId);
 
-      if (stepError) console.error("Schritte Fehler:", stepError);
+      if (stepsError) {
+        console.error("SUPABASE STEPS ERROR:", stepsError);
+        throw new BadRequestException(`Schritte-Fehler: ${stepsError.message}`);
+      }
     }
 
-    return this.findOne(recipe.id, userId);
+    return this.findOne(recipe.id, userId, householdId);
   }
 
-  async update(id: string, updateData: any, userId: string) {
-    const householdId = await this.getHouseholdId(userId);
+  async update(id: string, updateData: any, userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
+    
     const { ingredients, steps, ...mainData } = updateData;
 
     const { error: updateError } = await this.supabaseService.client
@@ -104,21 +108,31 @@ export class RecipesService {
 
     if (ingredients) {
       await this.supabaseService.client.from('recipe_ingredients').delete().eq('recipe_id', id);
-      const ingredientsWithId = ingredients.map(ing => ({ ...ing, recipe_id: id }));
+      const ingredientsWithId = ingredients.map(ing => ({
+        ingredient_name: ing.ingredient_name,
+        amount: ing.amount,
+        unit: ing.unit,
+        recipe_id: id
+      }));
       await this.supabaseService.client.from('recipe_ingredients').insert(ingredientsWithId);
     }
 
     if (steps) {
       await this.supabaseService.client.from('recipe_steps').delete().eq('recipe_id', id);
-      const stepsWithId = steps.map(step => ({ ...step, recipe_id: id }));
+      const stepsWithId = steps.map(step => ({
+        step_description: step.step_description,
+        step_order: step.step_order,
+        step_number: step.step_order,
+        recipe_id: id
+      }));
       await this.supabaseService.client.from('recipe_steps').insert(stepsWithId);
     }
 
-    return this.findOne(id, userId);
+    return this.findOne(id, userId, householdId);
   }
 
-  async remove(id: string, userId: string) {
-    const householdId = await this.getHouseholdId(userId);
+  async remove(id: string, userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
 
     const { error } = await this.supabaseService.client
       .from('recipes')

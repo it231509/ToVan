@@ -8,6 +8,9 @@ import CreateRecipe from '@/views/CreateRecipe.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
 import { supabase } from '@/supabase';
+import Profile from '@/views/Profile.vue';
+import Laundry from '@/views/Laundry.vue';
+import Cleaning from '@/views/Cleaning.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +47,21 @@ const router = createRouter({
       path: '/shoppinglist',
       name: 'shoppinglist',
       component: ShoppingList, 
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: Profile, 
+    },
+    {
+      path: '/laundry',
+      name: 'laundry',
+      component: Laundry, 
+    },
+    {
+      path: '/cleaning',
+      name: 'cleaning',
+      component: Cleaning, 
     },
   ],
 });

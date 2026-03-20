@@ -1,23 +1,30 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class ShoppingListService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  private async getHouseholdIdForUser(userId: string): Promise<string> {
+  private async validateMembership(userId: string, householdId: string): Promise<void> {
+    if (!householdId) {
+      throw new BadRequestException('Keine Haushalts-ID (Header) angegeben');
+    }
+
     const { data, error } = await this.supabaseService.client
       .from('household_members')
-      .select('household_id')
+      .select('id')
       .eq('user_id', userId)
-      .single();
+      .eq('household_id', householdId)
+      .maybeSingle();
 
-    if (error || !data) throw new ForbiddenException('User gehört zu keinem Haushalt');
-    return data.household_id;
+    if (error || !data) {
+      throw new ForbiddenException('Zugriff auf diesen Haushalt verweigert');
+    }
   }
 
-  async getList(userId: string) {
-    const householdId = await this.getHouseholdIdForUser(userId);
+  async getList(userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
+
     const { data, error } = await this.supabaseService.client
       .from('shopping_list')
       .select('*')
@@ -29,8 +36,9 @@ export class ShoppingListService {
     return data;
   }
 
-  async addItem(userId: string, itemData: any) {
-    const householdId = await this.getHouseholdIdForUser(userId);
+  async addItem(userId: string, householdId: string, itemData: any) {
+    await this.validateMembership(userId, householdId);
+
     const { data, error } = await this.supabaseService.client
       .from('shopping_list')
       .insert([{ ...itemData, household_id: householdId }])
@@ -41,8 +49,9 @@ export class ShoppingListService {
     return data;
   }
 
-  async toggleItem(userId: string, id: string, isChecked: boolean) {
-    const householdId = await this.getHouseholdIdForUser(userId);
+  async toggleItem(userId: string, householdId: string, id: string, isChecked: boolean) {
+    await this.validateMembership(userId, householdId);
+
     const { data, error } = await this.supabaseService.client
       .from('shopping_list')
       .update({ is_checked: isChecked })
@@ -53,17 +62,21 @@ export class ShoppingListService {
     return data;
   }
 
-  async clearChecked(userId: string) {
-    const householdId = await this.getHouseholdIdForUser(userId);
-    await this.supabaseService.client
+  async clearChecked(userId: string, householdId: string) {
+    await this.validateMembership(userId, householdId);
+
+    const { error } = await this.supabaseService.client
       .from('shopping_list')
       .delete()
       .eq('household_id', householdId)
       .eq('is_checked', true);
+
+    if (error) throw error;
   }
 
-  async removeItem(userId: string, id: string) {
-    const householdId = await this.getHouseholdIdForUser(userId);
+  async removeItem(userId: string, householdId: string, id: string) {
+    await this.validateMembership(userId, householdId);
+
     const { error } = await this.supabaseService.client
       .from('shopping_list')
       .delete()
@@ -74,8 +87,8 @@ export class ShoppingListService {
     return { deleted: true };
   }
 
-  async generateFromMealPlan(userId: string, startDate: string, endDate: string) {
-    const householdId = await this.getHouseholdIdForUser(userId);
+  async generateFromMealPlan(userId: string, householdId: string, startDate: string, endDate: string) {
+    await this.validateMembership(userId, householdId);
 
     const { data: meals, error } = await this.supabaseService.client
       .from('meal_plan')
