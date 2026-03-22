@@ -67,11 +67,11 @@ onMounted(fetchAllMemberships);
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto pt-2 space-y-6 pb-20 transition-colors duration-300">
+  <div class="max-w-2xl mx-auto pt-0 space-y-6 pb-20 transition-colors duration-300">
     
     <div class="space-y-3">
-      <h3 class="font-bold text-base-content/60 uppercase text-xs tracking-widest">Meine Haushalte</h3>
-      <div class="flex gap-3 overflow-x-auto pb-2 px-2 no-scrollbar">
+      <h1 class="font-bold text-base-content/60 uppercase text-xs tracking-widest">Meine Haushalte</h1>
+      <div class="flex flex-wrap gap-3 overflow-x-auto pb-2 px-0 no-scrollbar">
         <button 
           v-for="m in allMemberships" 
           :key="m.household.id"
@@ -79,28 +79,27 @@ onMounted(fetchAllMemberships);
           :class="[
             'px-6 py-3 rounded-full whitespace-nowrap font-bold transition-all border shadow-sm',
             household?.id === m.household.id 
-              ? 'bg-primary text-white border-primary scale-105' 
+              ? 'bg-primary text-white border-primary' 
               : 'bg-base-100 text-base-content border-base-300 hover:border-primary/50'
           ]"
+          style="font-size: 14px;"
         >
           {{ m.household.name }}
         </button>
       </div>
     </div>
 
-    <hr class="border-base-300 mx-6 opacity-50">
-
-    <div v-if="household" class="bg-base-100 p-6 rounded-[2.5rem] shadow-sm border border-base-300">
+    <div v-if="household" class="bg-base-100 p-6 rounded-3xl shadow-sm border border-base-300">
       <div class="flex justify-between items-start mb-6">
         <div v-if="!isEditing">
-          <h1 class="text-3xl font-black text-base-content leading-tight">{{ household.name }}</h1>
+          <h1 class="text-xl font-black text-base-content leading-tight">{{ household.name }}</h1>
           <button @click="isEditing = true" class="text-xs text-primary font-bold uppercase mt-1 tracking-wider hover:opacity-80">Name bearbeiten</button>
         </div>
         <div v-else class="flex gap-2 flex-col w-full">
           <input v-model="newName" class="input input-bordered rounded-2xl w-full bg-base-200 border-base-300 focus:ring-primary" />
-          <div class="flex gap-2">
-            <button @click="saveName" class="btn btn-primary btn-sm rounded-xl flex-1">Speichern</button>
-            <button @click="isEditing = false" class="btn btn-ghost btn-sm rounded-xl">Abbrechen</button>
+          <div class="flex flex-col gap-2">
+            <button @click="saveName" class="btn btn-primary btn-md rounded-2xl">Speichern</button>
+            <button @click="isEditing = false" class="btn btn-ghost btn-md rounded-2xl">Abbrechen</button>
           </div>
         </div>
       </div>
@@ -116,7 +115,7 @@ onMounted(fetchAllMemberships);
       </div>
     </div>
 
-    <div v-if="household" class="bg-primary/10 p-8 rounded-[2.5rem] border border-primary/20">
+    <div v-if="household" class="bg-primary/10 p-6 rounded-3xl border border-primary/20">
       <h3 class="font-bold text-base-content mb-2">Jemanden zu "{{ household.name }}" hinzufügen</h3>
       <p class="text-sm text-base-content/70 mb-6">Teile diesen Haushalt mit anderen, um gemeinsam Rezepte und Pläne zu verwalten.</p>
       

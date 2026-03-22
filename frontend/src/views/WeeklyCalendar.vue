@@ -200,26 +200,25 @@ export default {
 <template>
   <div class="lg:container mx-auto p-0 lg:p-8 transition-colors duration-300">
     
-    <div class="flex flex-col md:flex-row justify-between mb-10 gap-4 px-4 lg:px-0">
+    <div class="flex flex-col md:flex-row justify-between mb-6 gap-2 px-0 lg:px-0">
       <div>
-        <h1 class="lg:text-4xl text-3xl font-black text-base-content tracking-tight">Dein <span class="text-primary">Wochenplan</span></h1>
-        <p class="text-base-content/50 font-medium">KW {{ currentWeekNumber }} | {{ weekDays[0].getFullYear() }}</p>
+        <h1 class="font-bold text-base-content/60 uppercase text-xs tracking-widest">KW {{ currentWeekNumber }} | {{ weekDays[0].getFullYear() }}</h1>
       </div>
       
       <div class="join shadow-sm border border-base-300 bg-base-100 p-1 rounded-2xl flex align-middle justify-evenly h-[50px]">
-        <button @click="prevWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem]">
+        <button @click="prevWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem] h-[100%]">
           «
         </button>
-        <button @click="resetToToday" class="btn join-item btn-sm md:btn-md border-none bg-base-200 text-base-content hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl px-6 font-bold tracking-tight">
+        <button @click="resetToToday" class="btn join-item btn-sm md:btn-md border-none bg-base-200 text-base-content hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-xl px-6 font-bold tracking-tight h-[100%]">
           Diese Woche
         </button>
-        <button @click="nextWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem]">
+        <button @click="nextWeek" class="btn join-item btn-sm md:btn-md bg-transparent border-none text-base-content/40 hover:bg-base-200 min-w-[3rem] h-[100%]">
           »
         </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6 px-4 lg:px-0">
+    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 lg:gap-6 px-0 lg:px-0">
       <div v-for="day in weekDays" :key="day.toISOString()" class="flex flex-col gap-2">
         <div class="flex items-center justify-between px-2">
           <span class="font-bold text-base-content/40 text-sm uppercase tracking-widest">{{ formatDayName(day) }}</span>
@@ -263,8 +262,8 @@ export default {
     </div>
 
     <dialog class="modal" :class="{ 'modal-open': showModal }">
-      <div class="modal-box max-w-xl bg-base-200 rounded-[2.5rem] p-0 overflow-hidden shadow-2xl border border-base-300">
-        <div class="p-6 bg-base-100 border-b border-base-300 flex justify-between items-center">
+      <div class="modal-box max-w-xl bg-base-200 rounded-3xl p-0 overflow-hidden shadow-2xl border border-base-300">
+        <div class="p-4 bg-base-100 border-b border-base-300 flex justify-between items-start">
           <div>
             <h3 class="font-black text-xl text-base-content">{{ selectedType }} wählen</h3>
             <p class="text-xs text-base-content/40 font-bold uppercase tracking-widest">{{ formatDate(selectedDay) }}</p>
@@ -291,7 +290,7 @@ export default {
       </form>
     </dialog>
 
-    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 px-4 lg:px-0">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 px-0 lg:px-0">
       <div class="stats shadow bg-base-100 border border-base-300 rounded-3xl overflow-hidden hide-on-mobile">
         <div class="stat">
           <div class="stat-title font-medium text-base-content/50">Placeholder</div>
@@ -300,7 +299,7 @@ export default {
         </div>
       </div>
       
-      <div class="bg-secondary/10 rounded-[2.5rem] p-8 flex flex-col gap-3 items-start justify-between border border-secondary/20 md:col-span-2 md:flex-row md:items-center">
+      <div class="bg-secondary/10 rounded-3xl p-6 flex flex-col gap-3 items-start justify-between border border-secondary/20 md:col-span-2 md:flex-row md:items-center">
         <div>
           <h3 class="font-bold text-secondary text-xl">Einkaufsliste bereitstellen!</h3>
           <p class="text-sm text-base-content/60">Zutaten vom {{ formatDate(weekDays[0]) }} bis {{ formatDate(weekDays[6]) }} hinzufügen.</p>

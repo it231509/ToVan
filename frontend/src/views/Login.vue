@@ -43,8 +43,8 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-base-200 px-6 transition-colors duration-300">
-    <div class="max-w-md w-full bg-base-100 p-10 rounded-[3rem] shadow-xl border border-base-300 relative overflow-hidden">
+  <div class="min-h-screen flex items-center justify-center bg-base-200 px-3 transition-colors duration-300">
+    <div class="max-w-md w-full bg-base-100 p-5 rounded-[3rem] shadow-xl border border-base-300 relative overflow-hidden">
       
       <div v-if="loading" class="absolute inset-0 bg-base-100/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in duration-300">
         <span class="loading loading-ring loading-lg text-primary"></span>
@@ -59,20 +59,18 @@ const handleLogin = async () => {
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-6">
-        <div class="form-control">
-          <label class="label font-bold text-base-content/70">E-Mail</label>
-          <input v-model="email" type="email" class="input input-bordered w-full rounded-2xl bg-base-200 border-base-300 focus:border-primary" required>
+        <div class="form-control mb-4">
+          <input v-model="email" type="email" placeholder="E-Mail" class="input input-bordered w-full rounded-2xl bg-base-200 border-base-300 focus:border-primary" required>
         </div>
         <div class="form-control">
-          <label class="label font-bold text-base-content/70">Passwort</label>
-          <input v-model="password" type="password" class="input input-bordered w-full rounded-2xl bg-base-200 border-base-300 focus:border-primary" required>
+          <input v-model="password" type="password" placeholder="Passwort" class="input input-bordered w-full rounded-2xl bg-base-200 border-base-300 focus:border-primary" required>
         </div>
 
         <div v-if="error" class="text-error text-sm font-medium text-center bg-error/10 py-2 rounded-xl border border-error/20">
           {{ error }}
         </div>
         
-        <button type="submit" class="btn btn-primary w-full rounded-2xl text-white font-bold h-14 shadow-lg shadow-primary/20">
+        <button type="submit" class="btn btn-primary w-full rounded-2xl text-white font-bold shadow-lg">
           Login
         </button>
       </form>

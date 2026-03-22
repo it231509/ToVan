@@ -37,13 +37,7 @@ export default {
 
 <template>
   <div class="lg:container mx-auto p-0 lg:p-8 transition-colors duration-300">
-    <div class="flex flex-col md:flex-row justify-between mb-12 gap-6 px-4 lg:px-0">
-      <div>
-        <h1 class="lg:text-4xl text-3xl font-black text-base-content tracking-tight">
-          Deine <span class="text-success">Rezepte</span>
-        </h1>
-        <p class="text-base-content/60 mt-1 font-medium">Entdecke deine kulinarischen Kreationen</p>
-      </div>
+    <div class="flex flex-col md:flex-row justify-between mt-2 mb-6 gap-6 px-0 lg:px-0">
 
       <div class="w-full md:w-72 lg:flex block flex-row gap-4 items-center">
         <div class="relative group">
@@ -51,6 +45,7 @@ export default {
             type="text" 
             placeholder="Rezepte suchen..." 
             class="w-full pl-11 pr-4 py-3 rounded-2xl border bg-base-100 border-base-300 text-base-content focus:ring-4 focus:ring-success/10 focus:border-success outline-none transition-all shadow-sm"
+            style="font-size: 14px;"
           >
           <div class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/30 group-focus-within:text-success transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,7 +65,7 @@ export default {
       </div>
     </div>
   
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 px-4 lg:px-0">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 px-0 lg:px-0">
       <div 
         v-for="recipe in recipes" 
         :key="recipe.id" 
@@ -90,7 +85,7 @@ export default {
           </div>
         </div>
 
-        <div class="p-5">
+        <div class="p-4">
           <div class="flex justify-between items-start mb-2">
             <h2 class="text-xl font-bold text-base-content leading-tight group-hover:text-success transition-colors">
               {{ recipe.title }}
@@ -102,7 +97,7 @@ export default {
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              25 Min.
+              {{ recipe.prep_time }} Min.
             </span>
             <button class="text-success font-semibold text-sm flex items-center group/btn">
               Ansehen

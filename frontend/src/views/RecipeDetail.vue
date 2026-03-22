@@ -30,16 +30,16 @@ onMounted(async () => {
 <template>
   <div class="lg:container mx-auto p-0 lg:p-8 max-w-6xl transition-colors duration-300">
     
-    <button @click="router.back()" class="group flex items-center text-base-content/50 hover:text-success mb-8 transition-colors px-4 lg:px-0">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <button @click="router.back()" class="group flex items-center text-base-content/50 hover:text-success mt-2 mb-5 transition-colors px-0 lg:px-0" style="font-size: 15px;">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
       Zurück zur Übersicht
     </button>
 
-    <div v-if="loading" class="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-12 px-4 lg:px-0">
+    <div v-if="loading" class="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-6 px-0 lg:px-0">
       <div class="lg:col-span-5 space-y-8">
-        <div class="h-[400px] bg-base-300 rounded-[3rem]"></div>
+        <div class="h-[300px] bg-base-300 rounded-3xl"></div>
         <div class="h-40 bg-base-200 rounded-[2.5rem]"></div>
       </div>
       <div class="lg:col-span-7 space-y-10">
@@ -48,17 +48,17 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-else-if="recipe" class="grid grid-cols-1 lg:grid-cols-12 gap-12 px-4 lg:px-0">
+    <div v-else-if="recipe" class="grid grid-cols-1 lg:grid-cols-12 gap-6 px-0 lg:px-0">
       
       <div class="lg:col-span-5 space-y-8">
-        <div class="relative h-[400px] rounded-[3rem] overflow-hidden shadow-2xl">
+        <div class="relative h-[300px] rounded-3xl overflow-hidden shadow-2xl mb-4">
           <img 
             src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800" 
             class="w-full h-full object-cover"
             alt="Recipe Image"
           />
           <div class="absolute bottom-6 left-6 right-6">
-            <div class="bg-base-100/90 backdrop-blur-md p-6 rounded-3xl flex justify-around shadow-lg border border-base-content/5">
+            <div class="bg-base-100/90 backdrop-blur-md p-4 rounded-3xl flex justify-around shadow-lg border border-base-content/5">
               <div class="text-center">
                 <p class="text-[10px] uppercase font-bold text-base-content/50">Zeit</p>
                 <p class="font-bold text-base-content">{{ recipe.prep_time || '30' }} Min.</p>
@@ -72,7 +72,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="bg-base-200 rounded-[2.5rem] p-8 border border-base-content/5">
+        <div class="bg-base-200 rounded-3xl p-6 border border-base-content/5">
           <h3 class="text-lg font-bold text-base-content mb-6">Nährwerte <span class="text-base-content/40 font-medium">/ Portion</span></h3>
           <div class="space-y-4">
             <div>
@@ -89,8 +89,8 @@ onMounted(async () => {
       </div>
 
       <div class="lg:col-span-7 space-y-10">
-        <div>
-          <h1 class="text-3xl font-black text-base-content tracking-tight leading-tight mb-4">
+        <div class="mb-10">
+          <h1 class="text-xl font-black text-base-content tracking-tight leading-tight mb-2">
             {{ recipe.title }}
           </h1>
           <p class="text-base-content/60 leading-relaxed italic">
@@ -99,8 +99,8 @@ onMounted(async () => {
         </div>
 
         <section>
-          <div class="flex items-center gap-4 mb-6">
-            <h3 class="text-xl font-bold text-base-content">Zutaten</h3>
+          <div class="flex items-center gap-4 mb-3">
+            <h3 class="text-l font-bold text-base-content">Zutaten</h3>
             <div class="h-[1px] flex-grow bg-base-300/50"></div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -114,12 +114,12 @@ onMounted(async () => {
         </section>
 
         <section>
-          <div class="flex items-center gap-4 mb-6">
-            <h3 class="text-xl font-bold text-base-content">Zubereitung</h3>
+          <div class="flex items-center gap-4 mb-3">
+            <h3 class="text-l font-bold text-base-content">Zubereitung</h3>
             <div class="h-[1px] flex-grow bg-base-300/50"></div>
           </div>
           <div class="space-y-6">
-            <div v-for="(step, index) in recipe.recipe_steps" :key="index" class="flex gap-6">
+            <div v-for="(step, index) in recipe.recipe_steps" :key="index" class="flex gap-3 mb-5">
               <div class="flex-none w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center text-success font-black shadow-sm">
                 {{ index + 1 }}
               </div>

@@ -104,18 +104,12 @@ export default {
 
 <template>
   <div class="lg:container mx-auto p-0 lg:p-8 transition-colors duration-300">
-    
-    <div class="flex flex-col md:flex-row justify-between mb-10 gap-6 px-4 lg:px-0">
-      <div>
-        <h1 class="lg:text-4xl text-3xl font-black text-base-content tracking-tight">
-          Deine <span class="text-secondary">Einkaufsliste</span>
-        </h1>
-        <p class="text-base-content/60 mt-1 font-medium">Frische Zutaten für deine Woche</p>
-      </div>
+
+    <div class="flex flex-col md:flex-row justify-between mb-6 gap-6 px-0 lg:px-0">
 
       <div class="w-full md:w-64">
         <div class="flex justify-between mb-2 text-xs font-bold text-base-content/40 uppercase tracking-widest">
-          <span>Fortschritt</span>
+          <h1 class="font-bold text-base-content/60 uppercase text-xs tracking-widest">Fortschritt</h1>
           <span>{{ progress }}%</span>
         </div>
         <div class="w-full bg-base-300 rounded-full h-2.5">
@@ -131,7 +125,7 @@ export default {
       </div>
     </div>
 
-    <div class="bg-base-100 p-4 rounded-[2rem] border border-base-300 shadow-sm mb-8 flex flex-wrap md:flex-nowrap flex-col md:flex-row gap-3 items-center mx-4 lg:mx-0">
+    <div class="bg-base-100 p-4 rounded-3xl border border-base-300 shadow-sm mt-2 mb-6 flex flex-wrap md:flex-nowrap flex-col md:flex-row gap-2 items-center mx-0 lg:mx-0">
       <div class="flex-grow min-w-[200px] w-full md:w-auto">
         <input 
           v-model="newItem.item_name" 
@@ -158,6 +152,8 @@ export default {
           <option value="L">L</option>
           <option value="Stk">Stk</option>
           <option value="Pkg">Pkg</option>
+          <option value="EL">EL</option>
+          <option value="TL">TL</option>
         </select>
       </div>
       <div class="w-full md:w-36">
@@ -173,26 +169,26 @@ export default {
       <button 
         @click="addItem"
         :disabled="!newItem.item_name"
-        class="btn btn-secondary rounded-2xl px-8 text-white font-bold h-12 min-h-0 disabled:bg-base-300 disabled:text-base-content/20 border-none w-full md:w-auto shadow-lg shadow-secondary/20"
+        class="btn btn-secondary shadow-lg rounded-2xl px-8 w-full md:w-auto disabled:bg-base-300 disabled:text-base-content/20 text-white font-bold mt-2"
       >
         Hinzufügen
       </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-8 px-4 lg:px-0">
+    <div class="grid grid-cols-1 gap-6 px-0 lg:px-0">
       <div v-for="(list, category) in groupedItems" :key="category" class="relative">
         
-        <div class="flex items-center gap-4 mb-4">
+        <div class="flex items-center gap-4 mb-2">
           <h3 class="text-lg font-bold text-base-content/80 whitespace-nowrap">{{ category }}</h3>
           <div class="h-[1px] w-full bg-base-300"></div>
         </div>
 
-        <div class="bg-base-100 rounded-[2rem] border border-base-300 shadow-sm overflow-hidden">
+        <div class="bg-base-100 rounded-3xl border border-base-300 shadow-sm overflow-hidden">
           <div class="divide-y divide-base-200">
             <div 
               v-for="item in list" 
               :key="item.id" 
-              class="group flex items-center p-4 hover:bg-secondary/5 transition-colors cursor-pointer"
+              class="group flex items-center py-3 px-4 hover:bg-secondary/5 transition-colors cursor-pointer"
             >
               <div class="relative flex items-center" @click.stop="toggleItem(item)">
                 <input 
@@ -205,6 +201,7 @@ export default {
               <div class="ml-4 flex-grow" @click.stop="toggleItem(item)">
                 <span 
                   class="text-base-content font-medium transition-all"
+                  style="font-size: 15px;"
                   :class="{ 'line-through text-base-content/30 opacity-50': item.is_checked }"
                 >
                   {{ item.item_name }}

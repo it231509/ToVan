@@ -22,6 +22,7 @@ const toggleTheme = () => {
 const toggleMode = () => {
   isCookingMode.value = !isCookingMode.value;
   localStorage.setItem('mode', isCookingMode.value ? 'cooking' : 'household');
+  router.push('/');
 };
 
 router.beforeEach((to, from, next) => {
@@ -117,9 +118,9 @@ const menuItems = computed(() =>
       <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
       
       <div class="drawer-content flex flex-col">
-        <header class="lg:hidden flex justify-between items-center px-6 py-4 bg-base-100/50 backdrop-blur-md border-b border-base-300">
+        <header class="lg:hidden flex justify-between items-center px-3 py-2 bg-base-100/50 backdrop-blur-md border-b border-base-300">
           <img class="w-12 h-12" src="./assets/Logo.png" alt="ToVan Logo">
-          <div class="flex flex-row gap-3">
+          <div class="flex flex-row gap-2">
             <button @click="toggleMode" class="w-16 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/70">
               <span class="text-xs font-bold">
                 {{ isCookingMode ? 'Kochen' : 'Putzen' }}
@@ -139,7 +140,7 @@ const menuItems = computed(() =>
           </div>
         </header>
 
-        <main class="flex-grow pb-32 lg:pb-12 px-6 pt-2 lg:px-16 lg:pt-16">
+        <main class="flex-grow pb-32 lg:pb-12 px-3 pt-2 lg:px-16 lg:pt-16">
           <RouterView />
         </main>
 
