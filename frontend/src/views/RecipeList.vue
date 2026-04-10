@@ -74,7 +74,7 @@ export default {
       >
         <div class="relative h-48 overflow-hidden">
           <img 
-            src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600" 
+            :src="recipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600'" 
             alt="Food" 
             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />

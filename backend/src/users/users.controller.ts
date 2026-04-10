@@ -16,6 +16,15 @@ export class UsersController {
     return this.usersService.initializeUser(req.user.id, req.user.email);
   }
 
+  @Post('create-shared')
+  @UseGuards(SupabaseGuard)
+  async createShared(@Req() req, @Body('name') name: string) {
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('Ein Name für den Haushalt ist erforderlich');
+    }
+    return this.usersService.createSharedHousehold(req.user.id, name);
+  }
+
   @Get('my-households')
   @UseGuards(SupabaseGuard)
   async getMyHouseholds(@Req() req) {
@@ -29,27 +38,54 @@ export class UsersController {
     return this.usersService.getHouseholdDetails(req.user.id, householdId);
   }
 
-@Patch('household/name')
-@UseGuards(SupabaseGuard)
-async updateName(@Req() req, @Body('name') name: string) {
-  const householdId = this.getHouseholdIdFromHeader(req);
-  
-  if (!householdId) {
-    throw new BadRequestException('Keine x-household-id im Header gefunden');
-  }
-  
-  return this.usersService.updateHouseholdName(req.user.id, name, householdId);
-}
-
-@Post('invite')
-@UseGuards(SupabaseGuard)
-async inviteUser(@Req() req, @Body('email') email: string) {
-  const householdId = this.getHouseholdIdFromHeader(req);
-
-  if (!householdId) {
-    throw new BadRequestException('Keine x-household-id im Header gefunden');
+  @Patch('household/name')
+  @UseGuards(SupabaseGuard)
+  async updateName(@Req() req, @Body('name') name: string) {
+    const householdId = this.getHouseholdIdFromHeader(req);
+    
+    if (!householdId) {
+      throw new BadRequestException('Keine x-household-id im Header gefunden');
+    }
+    
+    return this.usersService.updateHouseholdName(req.user.id, name, householdId);
   }
 
-  return this.usersService.addUserToHousehold(req.user.id, email, householdId);
-}
+  @Post('invite')
+  @UseGuards(SupabaseGuard)
+  async inviteUser(@Req() req, @Body('email') email: string) {
+    const householdId = this.getHouseholdIdFromHeader(req);
+
+    if (!householdId) {
+      throw new BadRequestException('Keine x-household-id im Header gefunden');
+    }
+
+    return this.usersService.createInvitation(req.user.id, email, householdId);
+  }
+
+  @Get('invitations')
+  @UseGuards(SupabaseGuard)
+  async getInvitations(@Req() req) {
+    console.log('Anfrage Einladungen für:', req.user?.email);
+    
+    if (!req.user?.email) {
+      throw new BadRequestException('Nutzer-E-Mail konnte nicht aus dem Token gelesen werden.');
+    }
+    
+    return this.usersService.getPendingInvitations(req.user.email);
+  }
+
+  @Post('accept-invitation')
+  @UseGuards(SupabaseGuard)
+  async acceptInvite(@Req() req, @Body('token') token: string) {
+    return this.usersService.acceptInvitation(token, req.user.id, req.user.email);
+  }
+
+  @Post('household/leave')
+  @UseGuards(SupabaseGuard)
+  async leaveHousehold(@Req() req, @Body('householdId') householdId: string) {
+    if (!householdId) {
+      throw new BadRequestException('Haushalt-ID ist erforderlich');
+    }
+    return this.usersService.leaveOrDeleteHousehold(req.user.id, householdId);
+  }
 }

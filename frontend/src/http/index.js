@@ -2,8 +2,8 @@ import axios from 'axios';
 import { supabase } from '@/supabase';
 
 const backend = axios.create({
-  baseURL: 'https://se231326-10988.node.fhstp.cc/',
-  /*baseURL: 'http://localhost:3000/',*/
+  /*baseURL: 'https://se231326-10988.node.fhstp.cc/',*/
+  baseURL: 'http://localhost:3000/',
   timeout: 10000,
 });
 
@@ -85,6 +85,24 @@ export const createRecipe = async (item) => {
     return result.data;
   } catch (e) {
     throw new Error(e.response?.data?.message || 'Rezept konnte nicht erstellt werden');
+  }
+};
+
+export const updateRecipe = async (id, item) => {
+  try {
+    const result = await backend.put(`recipes/${id}`, item);
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Rezept konnte nicht bearbeitet werden');
+  }
+};
+
+export const deleteRecipeById = async (id) => {
+  try {
+    const result = await backend.delete(`recipes/${id}`);
+    return result.data;
+  } catch (e) {
+    throw new Error(e.response?.data?.message || 'Rezept nicht gefunden');
   }
 };
 

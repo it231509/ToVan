@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getRecipeById } from '@/http';
+import { getRecipeById, deleteRecipeById } from '@/http';
 
 const props = defineProps({
   id: {
@@ -13,6 +13,7 @@ const props = defineProps({
 const router = useRouter();
 const recipe = ref(null);
 const loading = ref(true);
+const isDeleting = ref(false);
 
 onMounted(async () => {
   try {
@@ -25,17 +26,65 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+const handleDelete = async () => {
+  if (!confirm('Möchtest du dieses Rezept wirklich unwiderruflich löschen?')) return;
+  
+  isDeleting.value = true;
+  try {
+    await deleteRecipeById(props.id);
+    router.push('/recipes');
+  } catch (e) {
+    console.error('Fehler beim Löschen', e);
+    alert('Fehler beim Löschen des Rezepts.');
+    isDeleting.value = false;
+  }
+};
+
+const goToEdit = () => {
+  router.push(`/edit-recipe/${props.id}`);
+};
 </script>
 
 <template>
   <div class="lg:container mx-auto p-0 lg:p-8 max-w-6xl transition-colors duration-300">
     
-    <button @click="router.back()" class="group flex items-center text-base-content/50 hover:text-success mt-2 mb-5 transition-colors px-0 lg:px-0" style="font-size: 15px;">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Zurück zur Übersicht
-    </button>
+    <div class="flex justify-between items-center mt-2 mb-5 px-0 lg:px-0">
+      <button @click="router.back()" class="group flex items-center text-base-content/50 hover:text-success transition-colors" style="font-size: 15px;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Zurück zur Übersicht
+      </button>
+
+      <div v-if="recipe && !loading" class="flex gap-2">
+  <button 
+    @click="goToEdit" 
+    class="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center text-base-content/70 hover:bg-base-300 hover:border-primary/30 hover:text-primary transition-all active:scale-95 shadow-sm"
+    title="Rezept bearbeiten"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+  </button>
+
+  <button 
+    @click="handleDelete" 
+    :disabled="isDeleting" 
+    class="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center text-error/60 hover:bg-error/10 hover:border-error/30 hover:text-error transition-all active:scale-95 shadow-sm disabled:opacity-50"
+    title="Rezept löschen"
+  >
+    <span v-if="isDeleting" class="loading loading-spinner loading-xs"></span>
+    <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
+    </svg>
+  </button>
+</div>
+    </div>
 
     <div v-if="loading" class="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-6 px-0 lg:px-0">
       <div class="lg:col-span-5 space-y-8">
@@ -53,7 +102,7 @@ onMounted(async () => {
       <div class="lg:col-span-5 space-y-8">
         <div class="relative h-[300px] rounded-3xl overflow-hidden shadow-2xl mb-4">
           <img 
-            src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800" 
+            :src="recipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600'" 
             class="w-full h-full object-cover"
             alt="Recipe Image"
           />

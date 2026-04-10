@@ -5,6 +5,13 @@ import { SupabaseService } from "src/supabase/supabase.service";
 export class RecipesService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
+  // TODO: fertigstellen und nutzen
+  private async validateUserVerified(user: any) {
+    if (!user.email_confirmed_at) {
+      throw new ForbiddenException('Bitte verifiziere zuerst deine E-Mail-Adresse.');
+    }
+  }
+
   private async validateMembership(userId: string, householdId: string): Promise<void> {
     if (!householdId) {
       throw new BadRequestException('Keine Haushalts-ID (Header) angegeben');
@@ -94,42 +101,63 @@ export class RecipesService {
   }
 
   async update(id: string, updateData: any, userId: string, householdId: string) {
-    await this.validateMembership(userId, householdId);
+  await this.validateMembership(userId, householdId);
+  
+  const { 
+    ingredients, 
+    recipe_ingredients, 
+    steps, 
+    recipe_steps, 
+    id: _id,            
+    household_id: _hid, 
+    user_id: _uid,     
+    created_at: _ca,   
+    ...mainData 
+  } = updateData;
+
+  const { error: updateError } = await this.supabaseService.client
+    .from('recipes')
+    .update(mainData)
+    .eq('id', id)
+    .eq('household_id', householdId);
+
+  if (updateError) {
+    console.error("SUPABASE UPDATE ERROR:", updateError);
+    throw new BadRequestException(`Hauptdaten-Update fehlgeschlagen: ${updateError.message}`);
+  }
+
+  const finalIngredients = ingredients || recipe_ingredients;
+  if (finalIngredients) {
+    await this.supabaseService.client.from('recipe_ingredients').delete().eq('recipe_id', id);
     
-    const { ingredients, steps, ...mainData } = updateData;
-
-    const { error: updateError } = await this.supabaseService.client
-      .from('recipes')
-      .update(mainData)
-      .eq('id', id)
-      .eq('household_id', householdId);
-
-    if (updateError) throw new BadRequestException('Update fehlgeschlagen');
-
-    if (ingredients) {
-      await this.supabaseService.client.from('recipe_ingredients').delete().eq('recipe_id', id);
-      const ingredientsWithId = ingredients.map(ing => ({
-        ingredient_name: ing.ingredient_name,
-        amount: ing.amount,
-        unit: ing.unit,
+    if (finalIngredients.length > 0) {
+      const ingredientsWithId = finalIngredients.map(ing => ({
+        ingredient_name: ing.ingredient_name || ing.name,
+        amount: ing.amount || ing.menge,
+        unit: ing.unit || 'Stück',
         recipe_id: id
       }));
       await this.supabaseService.client.from('recipe_ingredients').insert(ingredientsWithId);
     }
+  }
 
-    if (steps) {
-      await this.supabaseService.client.from('recipe_steps').delete().eq('recipe_id', id);
-      const stepsWithId = steps.map(step => ({
-        step_description: step.step_description,
-        step_order: step.step_order,
-        step_number: step.step_order,
+  const finalSteps = steps || recipe_steps;
+  if (finalSteps) {
+    await this.supabaseService.client.from('recipe_steps').delete().eq('recipe_id', id);
+
+    if (finalSteps.length > 0) {
+      const stepsWithId = finalSteps.map((step, index) => ({
+        step_description: step.step_description || step.description || (typeof step === 'string' ? step : ''),
+        step_order: step.step_order || index + 1,
+        step_number: step.step_order || index + 1,
         recipe_id: id
       }));
       await this.supabaseService.client.from('recipe_steps').insert(stepsWithId);
     }
-
-    return this.findOne(id, userId, householdId);
   }
+
+  return this.findOne(id, userId, householdId);
+}
 
   async remove(id: string, userId: string, householdId: string) {
     await this.validateMembership(userId, householdId);

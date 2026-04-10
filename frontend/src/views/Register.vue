@@ -7,6 +7,7 @@ import backend from '@/http';
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
+const isSuccess = ref(false); 
 const error = ref(null);
 const router = useRouter();
 
@@ -22,16 +23,15 @@ const handleRegister = async () => {
 
     if (authError) throw authError;
 
-    const setupResponse = await backend.post('/users/setup-profile');
-    
-    if (setupResponse.data && setupResponse.data.householdId) {
-      localStorage.setItem('active_household_id', setupResponse.data.householdId);
+    if (authData.user && !authData.session) {
+      isSuccess.value = true;
+      loading.value = false;
+      return; 
     }
 
     router.push('/');
   } catch (e) {
     loading.value = false;
-    console.error("Registrierungsfehler:", e);
     error.value = e.message || 'Registrierung fehlgeschlagen';
   }
 };
@@ -45,6 +45,22 @@ const handleRegister = async () => {
         <span class="loading loading-ring loading-lg text-primary"></span>
         <p class="mt-4 font-black text-base-content tracking-tight">Dein Profil wird erstellt...</p>
         <p class="text-xs text-base-content/50">Wir richten deinen ersten Haushalt ein.</p>
+      </div>
+
+      <div v-if="isSuccess" class="absolute inset-0 bg-base-100 z-50 flex flex-col items-center justify-center p-8 text-center animate-in zoom-in duration-300">
+        <div class="w-20 h-20 bg-success/10 text-success rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-black text-base-content mb-2">Postfach prüfen!</h2>
+        <p class="text-base-content/60 text-sm leading-relaxed mb-8">
+          Wir haben einen Bestätigungslink an <span class="font-bold text-base-content">{{ email }}</span> gesendet. 
+          Bitte klicke auf den Link, um dein Konto zu aktivieren.
+        </p>
+        <RouterLink to="/login" class="btn btn-primary btn-block rounded-2xl text-white font-bold">
+          Zum Login
+        </RouterLink>
       </div>
 
       <div class="text-center mb-10">

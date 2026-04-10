@@ -1,16 +1,20 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue'; 
 import { supabase } from '@/supabase';
 import { useRouter, useRoute } from 'vue-router';
-import { getMyHouseholds } from '@/http';
+import backend, { getMyHouseholds } from '@/http';
 
 const session = ref(null);
 const isNavigating = ref(false); 
+const isVerifying = ref(false);
 const isAuthReady = ref(false);  
 const isDarkMode = ref(false);   
 const router = useRouter();
 const route = useRoute();
 const isCookingMode = ref(true);
+const isInitializing = ref(false);
+
+let authSubscription = null;
 
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value;
@@ -35,16 +39,25 @@ router.afterEach(() => {
 });
 
 const ensureActiveHousehold = async () => {
+  if (isInitializing.value) return;
   const savedId = localStorage.getItem('active_household_id');
-  if (!savedId) {
-    try {
-      const memberships = await getMyHouseholds();
-      if (memberships && memberships.length > 0) {
+  try {
+    isInitializing.value = true; 
+    const memberships = await getMyHouseholds();
+    if (memberships && memberships.length > 0) {
+      if (!savedId || !memberships.some(m => m.household.id === savedId)) {
         localStorage.setItem('active_household_id', memberships[0].household.id);
       }
-    } catch (e) {
-      console.error("Fehler beim automatischen Setzen des Haushalts");
+    } else {
+      const res = await backend.post('/users/setup-profile');
+      if (res.data?.householdId) {
+        localStorage.setItem('active_household_id', res.data.householdId);
+      }
     }
+  } catch (e) {
+    console.error("Fehler bei Haushalt-Validierung", e);
+  } finally {
+    isInitializing.value = false;
   }
 };
 
@@ -55,36 +68,39 @@ const handleLogout = async () => {
   router.push('/login');
 };
 
-onMounted(() => {
+onMounted(async () => {
   const savedMode = localStorage.getItem('mode');
-  if (savedMode) {
-    isCookingMode.value = savedMode === 'cooking';
-  }
+  if (savedMode) isCookingMode.value = savedMode === 'cooking';
   const savedTheme = localStorage.getItem('theme') || 
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   isDarkMode.value = savedTheme === 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
-  supabase.auth.getSession().then(async ({ data }) => {
-    session.value = data.session;
-    if (data.session) {
+  const { data: { session: initialSession } } = await supabase.auth.getSession();
+  session.value = initialSession;
+
+  if (initialSession) {
+    await ensureActiveHousehold();
+  }
+  
+  isAuthReady.value = true;
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, _session) => {
+    if (event === 'SIGNED_IN' && !session.value) {
+      session.value = _session;
       await ensureActiveHousehold();
+    } else if (event === 'SIGNED_OUT') {
+      session.value = null;
+      localStorage.removeItem('active_household_id');
+      router.push('/login');
     }
-    isAuthReady.value = true;
   });
 
-  supabase.auth.onAuthStateChange(async (_event, _session) => {
-    const wasLoggedIn = !!session.value;
-    session.value = _session;
-    
-    if (_session) {
-      await ensureActiveHousehold();
-      isAuthReady.value = true;
-    } else {
-      isAuthReady.value = true;
-      if (wasLoggedIn) router.push('/login');
-    }
-  });
+  authSubscription = subscription;
+});
+
+onUnmounted(() => {
+  if (authSubscription) authSubscription.unsubscribe();
 });
 
 const cookingMenu = [
@@ -112,7 +128,14 @@ const menuItems = computed(() =>
   </div>
 
   <template v-if="isAuthReady">
-    <div v-if="session && !$route.path.includes('login') && !$route.path.includes('register')" 
+    <div v-if="isVerifying" class="min-h-screen flex items-center justify-center bg-base-100">
+      <div class="flex flex-col items-center">
+        <span class="loading loading-ring loading-lg text-primary"></span>
+        <p class="mt-4 font-black text-base-content animate-pulse tracking-tight">E-Mail wird verifiziert...</p>
+      </div>
+    </div>
+
+    <div v-else-if="session && !isVerifying && !$route.path.includes('login') && !$route.path.includes('register')" 
          class="drawer lg:drawer-open bg-base-200 min-h-screen transition-colors duration-300">
       
       <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
@@ -122,15 +145,12 @@ const menuItems = computed(() =>
           <img class="w-12 h-12" src="./assets/Logo.png" alt="ToVan Logo">
           <div class="flex flex-row gap-2">
             <button @click="toggleMode" class="w-16 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/70">
-              <span class="text-xs font-bold">
-                {{ isCookingMode ? 'Kochen' : 'Putzen' }}
-              </span>
+              <span class="text-xs font-bold">{{ isCookingMode ? 'Kochen' : 'Putzen' }}</span>
             </button>
             <button @click="toggleTheme" class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/70">
               <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
               <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
-
             <RouterLink v-if="route.path === '/recipes'" to="/create-recipe" class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </RouterLink>
@@ -158,29 +178,23 @@ const menuItems = computed(() =>
         <label for="my-drawer-3" class="drawer-overlay"></label>
         <aside class="w-28 flex flex-col items-center justify-between py-10 bg-base-100 border-r border-base-300 h-screen transition-colors duration-300">
           <div class="mb-8"><img src="./assets/Logo.png" class="w-12 h-12" alt="Logo"></div>
-          
           <nav class="flex flex-col gap-6 w-full px-4">
             <RouterLink v-for="item in menuItems" :key="item.path" :to="item.path" class="desktop-nav-item" :title="item.name">
               <div v-html="item.icon" class="w-5 h-5"></div>
               <div class="active-indicator"></div>
             </RouterLink>
           </nav>
-
           <div class="flex flex-col gap-4 items-center mt-16">
-            <button @click="toggleMode" class="w-16 h-12 rounded-xl bg-base-200 flex items-center justify-center">
-              <span class="text-sm font-bold">
-                {{ isCookingMode ? 'Kochen' : 'Putzen' }}
-              </span>
+            <button @click="toggleMode" class="w-16 h-12 rounded-xl bg-base-200 flex items-center justify-center text-base-content/70">
+              <span class="text-sm font-bold">{{ isCookingMode ? 'Kochen' : 'Putzen' }}</span>
             </button>
             <button @click="toggleTheme" class="w-12 h-12 rounded-xl bg-base-200 hover:bg-base-300 flex items-center justify-center transition-all text-base-content/70">
               <svg v-if="isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
               <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
-
             <RouterLink to="/profile" class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-base-content/70 hover:bg-base-300 transition-all">
                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </RouterLink>
-
             <div @click="handleLogout" class="w-14 h-14 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center cursor-pointer hover:bg-error/10 hover:border-error/20 transition-colors group">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-base-content/50 group-hover:text-error transition-colors"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
             </div>
@@ -188,8 +202,7 @@ const menuItems = computed(() =>
         </aside>
       </div>
     </div>
-
-    <div v-else class="min-h-screen bg-base-100">
+    <div v-else-if="!isVerifying" class="min-h-screen bg-base-100">
       <RouterView />
     </div>
   </template>

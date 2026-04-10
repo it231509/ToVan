@@ -11,6 +11,7 @@ import { supabase } from '@/supabase';
 import Profile from '@/views/Profile.vue';
 import Laundry from '@/views/Laundry.vue';
 import Cleaning from '@/views/Cleaning.vue';
+import EditRecipe from '@/views/EditRecipe.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +30,12 @@ const router = createRouter({
       path: '/create-recipe',
       name: 'create-recipe',
       component: CreateRecipe, 
+    },
+    {
+      path: '/edit-recipe/:id',
+      name: 'edit-recipe',
+      component: EditRecipe,
+      props: true
     },
     {
       path: '/recipes',

@@ -2,17 +2,19 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase';
-import { getMyHouseholds } from '@/http';
+import backend, { getMyHouseholds } from '@/http';
 
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const error = ref(null);
+const successMsg = ref(null);
 const router = useRouter();
 
 const handleLogin = async () => {
   loading.value = true;
   error.value = null;
+  successMsg.value = null;
   
   try {
     const { error: authError } = await supabase.auth.signInWithPassword({
@@ -22,22 +24,14 @@ const handleLogin = async () => {
 
     if (authError) throw authError;
 
-    const memberships = await getMyHouseholds();
-
-    if (memberships && memberships.length > 0) {
-      const savedId = localStorage.getItem('active_household_id');
-      const isStillMember = memberships.some(m => m.household.id === savedId);
-
-      if (!savedId || !isStillMember) {
-        localStorage.setItem('active_household_id', memberships[0].household.id);
-      }
-    }
-
     router.push('/');
   } catch (e) {
     loading.value = false;
-    console.error("Login Fehler:", e);
-    error.value = 'E-Mail oder Passwort falsch';
+    if (e.message?.includes("Email not confirmed")) {
+      error.value = 'Bitte bestätige zuerst deine E-Mail-Adresse.';
+    } else {
+      error.value = 'E-Mail oder Passwort falsch';
+    }
   }
 };
 </script>
@@ -56,6 +50,13 @@ const handleLogin = async () => {
         <img src="../assets/Logo.png" class="w-16 mx-auto mb-4" alt="Logo">
         <h1 class="text-3xl font-black text-base-content">Schön, dass du da bist!</h1>
         <p class="text-base-content/60 mt-2">Logge dich in dein ToVan Konto ein</p>
+      </div>
+
+      <div v-if="successMsg" class="mb-6 p-4 bg-success/10 border border-success/20 rounded-2xl flex items-center gap-3 text-success animate-in slide-in-from-top duration-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-xs font-bold">{{ successMsg }}</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-6">

@@ -18,7 +18,7 @@ export class UsersService {
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      throw new ForbiddenException('Kein Zugriff auf diesen Haushalt oder keine Mitgliedschaft vorhanden');
+      throw new ForbiddenException('Kein Zugriff auf diesen Haushalt');
     }
 
     return providedId ? data[0].household_id : data[0].household_id;
@@ -29,7 +29,7 @@ export class UsersService {
       .from('household_members')
       .select(`
         role,
-        household:households (id, name)
+        household:households (id, name, type)
       `)
       .eq('user_id', userId);
 
@@ -38,25 +38,86 @@ export class UsersService {
   }
 
   async initializeUser(userId: string, email: string) {
-    const { data: existingMember } = await this.supabaseService.client
+    const { data: alreadyExists } = await this.supabaseService.client
       .from('household_members')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
+      .select('household_id')
+      .eq('user_id', userId);
 
-    if (existingMember) return { message: 'Profil bereits initialisiert' };
+    if (alreadyExists && alreadyExists.length > 0) {
+      return { householdId: alreadyExists[0].household_id, status: 'already_initialized' };
+    }
 
     const { data: household, error: hError } = await this.supabaseService.client
       .from('households')
-      .insert([{ name: `Haushalt von ${email.split('@')[0]}` }])
+      .insert([{ 
+        type: 'personal', 
+        name: 'Privat',
+      }])
       .select()
       .single();
 
-    if (hError) throw new BadRequestException('Haushalt konnte nicht erstellt werden');
+    if (hError) throw new BadRequestException('Fehler beim Erstellen des Haushalts');
 
-    await this.supabaseService.client
+    const { data: raceConditionCheck } = await this.supabaseService.client
       .from('household_members')
-      .insert([{ household_id: household.id, user_id: userId, role: 'admin' }]);
+      .select('household_id')
+      .eq('user_id', userId);
+
+    if (raceConditionCheck && raceConditionCheck.length > 0) {
+      await this.supabaseService.client.from('households').delete().eq('id', household.id);
+      return { householdId: raceConditionCheck[0].household_id, status: 'recovered_from_race' };
+    }
+
+    const { error: mError } = await this.supabaseService.client
+      .from('household_members')
+      .insert([{ 
+        household_id: household.id, 
+        user_id: userId, 
+        role: 'admin' 
+      }]);
+
+    if (mError) {
+      await this.supabaseService.client.from('households').delete().eq('id', household.id);
+      throw new BadRequestException('Fehler beim Zuweisen des Haushalts');
+    }
+
+    return { householdId: household.id, status: 'success' };
+  }
+
+  async createSharedHousehold(userId: string, name: string) {
+    const { data: memberships } = await this.supabaseService.client
+      .from('household_members')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', 'admin');
+
+    if (memberships && memberships.length >= 5) {
+      throw new BadRequestException('Du hast das Maximum an Haushalten erreicht (max. 4 geteilte Haushalte).');
+    }
+
+    const { data: household, error: hError } = await this.supabaseService.client
+      .from('households')
+      .insert([{ 
+        type: 'shared', 
+        name: name 
+      }])
+      .select()
+      .single();
+
+    if (hError) throw new BadRequestException('Fehler beim Erstellen des geteilten Haushalts');
+
+    const { error: mError } = await this.supabaseService.client
+      .from('household_members')
+      .insert([{ 
+        household_id: household.id, 
+        user_id: userId, 
+        role: 'admin' 
+      }]);
+
+    if (mError) {
+      await this.supabaseService.client.from('households').delete().eq('id', household.id);
+      throw new BadRequestException('Fehler beim Zuweisen des Haushalts');
+    }
 
     return { householdId: household.id, status: 'success' };
   }
@@ -66,7 +127,7 @@ export class UsersService {
 
     const { data: household, error: hError } = await this.supabaseService.client
       .from('households')
-      .select(`id, name, members:household_members (user_id, role)`)
+      .select(`id, name, type, members:household_members (user_id, role)`)
       .eq('id', householdId)
       .single();
 
@@ -91,26 +152,122 @@ export class UsersService {
       .from('households')
       .update({ name: newName })
       .eq('id', householdId)
-      .select()
+      .select('id, name, type')
       .single();
 
     if (error) throw new BadRequestException('Update fehlgeschlagen');
     return data;
   }
 
-  async addUserToHousehold(adminUserId: string, emailToAdd: string, adminProvidedId: string) {
-    const adminHouseholdId = await this.getHouseholdId(adminUserId, adminProvidedId);
+  async createInvitation(inviterId: string, emailToInvite: string, householdId: string) {
+    const id = await this.getHouseholdId(inviterId, householdId);
 
-    const { data: authData } = await this.supabaseService.client.auth.admin.listUsers();
-    const targetUser = authData.users.find((u: any) => u.email?.toLowerCase() === emailToAdd.toLowerCase());
-    if (!targetUser) throw new NotFoundException('User nicht gefunden');
+    const { data: household } = await this.supabaseService.client
+      .from('households')
+      .select('type')
+      .eq('id', id)
+      .single();
 
-    const { error: inviteError } = await this.supabaseService.client
+    if (household?.type === 'personal') {
+      throw new BadRequestException('In privaten Haushalten können keine Mitglieder eingeladen werden.');
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('household_invitations')
+      .insert([{
+        household_id: id,
+        inviter_id: inviterId,
+        email: emailToInvite.toLowerCase(),
+        status: 'pending'
+      }]);
+
+    if (error) throw new BadRequestException('Einladung konnte nicht erstellt werden oder User ist bereits eingeladen.');
+    
+    return { message: 'Einladung wurde versendet' };
+  }
+
+  async getPendingInvitations(userEmail: string) {
+    const { data, error } = await this.supabaseService.client
+      .from('household_invitations')
+      .select(`
+        id,
+        token,
+        household_id,
+        households (
+          id,
+          name
+        )
+      `)
+      .eq('email', userEmail.toLowerCase())
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error('Supabase Error Invitations:', error);
+      throw new BadRequestException('Fehler beim Laden der Einladungen: ' + error.message);
+    }
+    
+    return data;
+  }
+
+  async acceptInvitation(token: string, userId: string, userEmail: string) {
+    const { data: invite, error: inviteError } = await this.supabaseService.client
+      .from('household_invitations')
+      .select('*')
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single();
+
+    if (inviteError || !invite) throw new NotFoundException('Einladung nicht gefunden oder bereits abgelaufen');
+    if (invite.email !== userEmail.toLowerCase()) throw new ForbiddenException('Diese Einladung ist nicht für deine E-Mail bestimmt');
+
+    const { error: mError } = await this.supabaseService.client
       .from('household_members')
-      .insert([{ household_id: adminHouseholdId, user_id: targetUser.id, role: 'member' }]);
+      .insert([{ household_id: invite.household_id, user_id: userId, role: 'member' }]);
 
-    if (inviteError) throw new BadRequestException('User ist bereits Mitglied in diesem Haushalt');
+    if (mError) throw new BadRequestException('Du bist bereits Mitglied in diesem Haushalt');
 
-    return { message: 'Erfolgreich zum Haushalt hinzugefügt' };
+    await this.supabaseService.client
+      .from('household_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', invite.id);
+
+    return { householdId: invite.household_id, status: 'success' };
+  }
+
+  async leaveOrDeleteHousehold(userId: string, householdId: string) {
+    const { data: member, error: mError } = await this.supabaseService.client
+      .from('household_members')
+      .select('role, household:households(type)')
+      .eq('user_id', userId)
+      .eq('household_id', householdId)
+      .single();
+
+    if (mError || !member) {
+      throw new ForbiddenException('Du bist kein Mitglied dieses Haushalts');
+    }
+
+    if (member.household['type'] === 'personal') {
+      throw new BadRequestException('Der persönliche Haushalt kann nicht verlassen oder gelöscht werden.');
+    }
+
+    if (member.role === 'admin') {
+      const { error: deleteError } = await this.supabaseService.client
+        .from('households')
+        .delete()
+        .eq('id', householdId);
+
+      if (deleteError) throw new BadRequestException('Fehler beim Löschen des Haushalts');
+      return { message: 'Haushalt wurde erfolgreich gelöscht' };
+      
+    } else {
+      const { error: exitError } = await this.supabaseService.client
+        .from('household_members')
+        .delete()
+        .eq('user_id', userId)
+        .eq('household_id', householdId);
+
+      if (exitError) throw new BadRequestException('Fehler beim Verlassen des Haushalts');
+      return { message: 'Haushalt wurde erfolgreich verlassen' };
+    }
   }
 }
