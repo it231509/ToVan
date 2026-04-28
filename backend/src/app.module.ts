@@ -7,6 +7,7 @@ import { RecipesModule } from './recipes/recipes.module';
 import { MealPlanModule } from './meal-plan/meal-plan.module';
 import { ShoppingListModule } from './shopping-list/shopping-list.module';
 import { UsersModule } from './users/users.module';
+import { CleaningModule } from './cleaning/cleaning.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { UsersModule } from './users/users.module';
     RecipesModule,
     MealPlanModule,
     ShoppingListModule,
-    UsersModule
+    UsersModule,
+    CleaningModule
   ],
   controllers: [AppController],
   providers: [AppService, SupabaseService],

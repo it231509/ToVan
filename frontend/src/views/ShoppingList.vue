@@ -228,9 +228,9 @@ export default {
       </div>
     </div>
 
-    <div v-if="items.length === 0" class="text-center py-20 bg-base-200 rounded-[2rem] border-2 border-dashed border-base-300 mx-0">
-      <h2 class="text-xl font-bold text-base-content/30">Deine Liste ist leer</h2>
-      <p class="text-base-content/30">Plane deine Woche, um Zutaten hinzuzufügen.</p>
+    <div v-if="items.length === 0" class="p-6 text-center border-2 border-dashed border-base-300 rounded-3xl opacity-60">
+      <p class="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-2">Deine Einkaufsliste ist leer</p>
+      <p class="text-sm mt-1 text-base-content/60 leading-tight">Plane deine Woche, um Zutaten hinzuzufügen.</p>
     </div>
 
   </div>

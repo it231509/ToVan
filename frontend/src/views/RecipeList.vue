@@ -78,7 +78,7 @@ export default {
             alt="Food" 
             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
-          <div class="absolute top-3 right-3">
+          <div v-if="recipe.protein_per_serving" class="absolute top-3 right-3">
             <span class="bg-base-100/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-base-content shadow-sm border border-base-content/5">
               {{ recipe.protein_per_serving }}g Protein
             </span>
@@ -108,6 +108,11 @@ export default {
           </div>
         </div>
       </div>
+    </div>
+
+    <div v-if="recipes.length === 0" class="p-6 text-center border-2 border-dashed border-base-300 rounded-3xl opacity-60">
+      <p class="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-2">Deine Rezeptliste ist leer</p>
+      <p class="text-sm mt-1 text-base-content/60 leading-tight">Lege neue Rezepte an, um die Liste zu füllen‚.</p>
     </div>
   </div>
 </template>

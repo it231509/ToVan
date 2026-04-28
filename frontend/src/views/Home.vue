@@ -188,24 +188,24 @@ onMounted(() => {
       </div>
 
       <div v-if="isCreating" class="p-4 bg-base-100 border border-base-300 rounded-3xl mt-2 animate-in slide-in-from-top-2">
-        <h3 class="text-sm font-bold mb-3 uppercase tracking-wider text-base-content/60">Geteilten Haushalt anlegen</h3>
+        <h3 class="font-bold text-base-content/60 uppercase text-xs tracking-widest mb-4">Geteilten Haushalt anlegen</h3>
         <div class="flex gap-3 flex-col md:flex-row">
-          <input v-model="newSharedHouseholdName" placeholder="Name (z.B. WG, Familie)" class="input input-bordered w-full rounded-2xl bg-base-200" />
+          <input v-model="newSharedHouseholdName" placeholder="Name (z.B. WG, Familie)" class="input input-bordered rounded-2xl w-full bg-base-200 border-base-300 focus:ring-primary" />
           <button @click="createSharedHousehold" class="btn btn-primary rounded-2xl">Erstellen</button>
         </div>
       </div>
     </div>
 
-    <div v-if="household" class="bg-base-100 p-6 rounded-3xl shadow-sm border border-base-300">
+    <div v-if="household" class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300">
       <div class="flex justify-between items-start">
         <div v-if="!isEditing">
           <div class="flex items-center gap-2">
             <h1 class="text-xl font-black text-base-content leading-tight">{{ household.name }}</h1>
-            <div v-if="household.type === 'personal'" class="badge badge-ghost text-[10px] uppercase font-bold opacity-50">Persönlich</div>
+            <div v-if="household.type === 'personal'" class="badge badge-ghost text-[10px] uppercase font-bold opacity-50">Privat</div>
           </div>
           <button @click="isEditing = true" class="text-xs text-primary font-bold uppercase mt-1 tracking-wider hover:opacity-80">Name bearbeiten</button>
         </div>
-        <div v-else class="flex gap-2 flex-col w-full">
+        <div v-else class="flex gap-3 flex-col w-full">
           <input v-model="newName" class="input input-bordered rounded-2xl w-full bg-base-200 border-base-300 focus:ring-primary" />
           <div class="flex flex-col gap-2">
             <button @click="saveName" class="btn btn-primary btn-md rounded-2xl">Speichern</button>
@@ -231,7 +231,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="household && household.type !== 'personal'" class="bg-primary/10 p-6 rounded-3xl border border-primary/20">
+    <div v-if="household && household.type !== 'personal'" class="bg-primary/10 p-4 rounded-3xl border border-primary/20">
       <h3 class="font-bold text-base-content mb-2">Jemanden einladen</h3>
       <p class="text-sm text-base-content/70 mb-6">Der User sieht die Einladung direkt in seinem Dashboard.</p>
       
@@ -242,8 +242,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-else-if="household && household.type === 'personal'" class="p-6 text-center border-2 border-dashed border-base-300 rounded-3xl opacity-60">
-      <p class="text-xs font-bold uppercase tracking-widest text-base-content/40">Privater Bereich</p>
+    <div v-else-if="household && household.type === 'personal'" class="p-4 text-center border-2 border-dashed border-base-300 rounded-3xl opacity-60">
+      <p class="text-xs font-bold uppercase tracking-widest text-base-content/40 mb-2">Privater Bereich</p>
       <p class="text-sm mt-1 text-base-content/60 leading-tight">Hier können keine Mitglieder hinzugefügt werden.</p>
     </div>
 

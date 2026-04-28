@@ -149,12 +149,32 @@ export default {
           plan_date: this.getISODate(this.selectedDay),
           meal_type: this.selectedType,
           recipe_id: recipeId,
+          custom_title: null, // Reset falls vorher Text getippt wurde
           planned_for: finalTarget
         });
         this.showModal = false;
         await this.fetchPlan(); 
       } catch (e) {
         console.error('Fehler beim Speichern');
+      }
+    },
+
+    async saveCustomMeal() {
+      if (!this.searchQuery) return;
+      try {
+        const finalTarget = this.plannedFor === 'Andere' ? this.plannedForCustom : this.plannedFor;
+        await addMealToPlan({
+          plan_date: this.getISODate(this.selectedDay),
+          meal_type: this.selectedType,
+          recipe_id: null,
+          custom_title: this.searchQuery,
+          planned_for: finalTarget
+        });
+        this.showModal = false;
+        this.searchQuery = '';
+        await this.fetchPlan(); 
+      } catch (e) {
+        console.error('Fehler beim Speichern der Text-Mahlzeit');
       }
     },
 
@@ -244,17 +264,22 @@ export default {
             
             <div v-for="meal in getMealsForType(day, type)" :key="meal.id"
                  class="card bg-primary text-primary-content shadow-sm group relative overflow-hidden transition-all cursor-pointer"
-                 @click="$router.push(`/recipe/${meal.recipe_id}`)">
+                 @click="meal.recipe_id ? $router.push(`/recipe/${meal.recipe_id}`) : null">
               <div class="p-3">
                 <div class="text-sm font-bold leading-tight pr-4">
-                  {{ meal.recipe?.title }}
+                  {{ meal.recipe?.title || meal.custom_title }}
                 </div>
                 <div class="flex flex-wrap gap-1 mt-2">
                   <div v-if="meal.planned_for" class="badge badge-xs bg-black/20 border-none text-[8px] text-white py-2 px-2">
                     {{ meal.planned_for }}
                   </div>
-                  <div class="badge badge-xs bg-white/20 border-none text-[8px] text-white py-2 px-2">
+                  <div v-if="meal.recipe && meal.recipe.protein_per_serving" class="badge badge-xs bg-white/20 border-none text-[8px] text-white py-2 px-2">
                     {{ meal.recipe?.protein_per_serving }}g Protein
+                  </div>
+                  <div v-if="meal.recipe && !meal.recipe.protein_per_serving">
+                  </div>
+                  <div v-if="!meal.recipe" class="badge badge-xs bg-black/10 border-none text-[8px] text-white/60 py-2 px-2 italic">
+                    Kein Rezept vorhanden
                   </div>
                 </div>
                 <button @click.stop="deleteMeal(meal.id)" 
@@ -295,10 +320,13 @@ export default {
           </div>
         </div>
 
-        <div class="px-4 pt-4 pb-2">
-          <input v-model="searchQuery" type="text" placeholder="Rezept suchen..." 
-                 class="input w-full rounded-2xl bg-base-100 border-base-300 focus:border-primary focus:ring-0 text-base-content" />
+        <div class="px-4 pt-4 pb-2 flex gap-2">
+          <input v-model="searchQuery" type="text" placeholder="Rezept suchen oder Text tippen..." 
+                 class="input flex-grow rounded-2xl bg-base-100 border-base-300 focus:border-primary focus:ring-0 text-base-content" 
+                 @keyup.enter="saveCustomMeal" />
+          <button v-if="searchQuery" @click="saveCustomMeal" class="btn btn-primary rounded-2xl text-white">Hinzufügen</button>
         </div>
+        
         <div class="px-4 pt-2 pb-4 max-h-[350px] overflow-y-auto space-y-2">
           <div v-for="recipe in filteredRecipes" :key="recipe.id" @click="selectRecipe(recipe.id)" 
                class="flex items-center gap-4 bg-base-100 p-3 rounded-[1.5rem] border border-transparent hover:border-primary/40 cursor-pointer transition-all hover:shadow-lg group">

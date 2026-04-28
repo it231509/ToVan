@@ -157,7 +157,7 @@ export default {
 
     <form v-else @submit.prevent="handleSubmit" class="space-y-8 px-0 lg:px-0 mt-3">
       
-      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300">
+      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300 mb-5">
         <h3 class="font-bold text-xl text-base-content mb-4">Rezept-Bild ändern</h3>
         
         <div class="relative group flex flex-col items-center justify-center border-2 border-dashed border-base-300 rounded-2xl p-4 bg-base-200 hover:border-primary transition-all cursor-pointer h-52 overflow-hidden">
@@ -178,7 +178,7 @@ export default {
         </div>
       </div>
 
-      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300 grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300 grid grid-cols-1 md:grid-cols-2 gap-2 mb-5">
         <h3 class="font-bold text-xl text-base-content mb-2">Basisdaten</h3>
         <div class="form-control md:col-span-2">
           <input v-model="recipe.title" placeholder="Titel" type="text" class="input input-bordered rounded-xl bg-base-200 border-base-300 focus:border-primary w-full" required />
@@ -194,32 +194,35 @@ export default {
         </div>
       </div>
 
-      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300">
-        <div class="flex justify-between items-center mb-4">
+      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300 mb-5">
+        <div class="mb-4">
           <h3 class="font-bold text-xl text-base-content">Zutaten</h3>
-          <button type="button" @click="addIngredient" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">+</button>
         </div>
-        <div v-for="(ing, index) in recipe.ingredients" :key="index" class="flex flex-wrap md:flex-nowrap gap-2 mb-3">
+        <div v-for="(ing, index) in recipe.ingredients" :key="index" class="flex flex-wrap md:flex-nowrap gap-2 mb-5">
           <input v-model="ing.amount" placeholder="Menge" class="input input-bordered w-full md:w-24 rounded-xl bg-base-200 border-base-300" />
           <input v-model="ing.unit" placeholder="Einheit" class="input input-bordered w-full md:w-24 rounded-xl bg-base-200 border-base-300" />
           <input v-model="ing.ingredient_name" placeholder="Zutat" class="input input-bordered flex-grow rounded-xl bg-base-200 border-base-300" required />
-          <button v-if="recipe.ingredients.length > 1" @click="removeIngredient(index)" type="button" class="btn btn-ghost btn-sm text-error self-center">✕</button>
+          <div class="w-full flex justify-center gap-2">
+            <button v-if="recipe.ingredients.length > 1" @click="removeIngredient(index)" type="button" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">-</button>
+            <button v-if="index === recipe.ingredients.length - 1" type="button" @click="addIngredient" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">+</button>
+          </div>
         </div>
       </div>
 
-      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300">
-        <div class="flex justify-between items-center mb-4">
+      <div class="bg-base-100 p-4 rounded-3xl shadow-sm border border-base-300 mb-5">
+        <div class="mb-4">
           <h3 class="font-bold text-xl text-base-content">Zubereitung</h3>
-          <button type="button" @click="addStep" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">+</button>
         </div>
-        <div v-for="(step, index) in recipe.steps" :key="index" class="flex mb-4">
-          <div class="font-black text-primary pt-1 mr-2 text-lg">{{ step.step_order }}.</div>
-          <textarea v-model="step.step_description" class="textarea textarea-bordered flex-grow rounded-xl bg-base-200 border-base-300 focus:border-primary min-h-[100px]" required></textarea>
-          <button v-if="recipe.steps.length > 1" @click="removeStep(index)" type="button" class="btn btn-ghost btn-sm text-error px-2">✕</button>
+        <div v-for="(step, index) in recipe.steps" :key="index" class="flex flex-wrap md:flex-nowrap gap-2 mb-5">
+          <textarea v-model="step.step_description" :placeholder="'Schritt '+step.step_order" class="textarea textarea-bordered flex-grow rounded-xl bg-base-200 border-base-300 focus:border-primary min-h-[100px]" required></textarea>
+          <div class="w-full flex justify-center gap-2">
+            <button v-if="recipe.steps.length > 1" @click="removeStep(index)" type="button" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">-</button>
+            <button v-if="index === recipe.steps.length - 1" type="button" @click="addStep" class="btn btn-sm btn-circle btn-primary text-white shadow-md shadow-primary/20">+</button>
+          </div>
         </div>
       </div>
 
-      <div class="pb-12">
+      <div>
         <button type="submit" class="btn btn-primary w-full rounded-2xl text-white font-black shadow-lg" :disabled="loading || uploading">
           <span v-if="loading" class="loading loading-spinner"></span>
           {{ loading ? 'Änderungen speichern...' : 'Rezept aktualisieren' }}

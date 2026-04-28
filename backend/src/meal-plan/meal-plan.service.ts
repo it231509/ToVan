@@ -29,6 +29,7 @@ export class MealPlanService {
       .from('meal_plan')
       .select(`
         *,
+        custom_title,
         recipe:recipes (
           title,
           protein_per_serving        

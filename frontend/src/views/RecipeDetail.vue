@@ -121,7 +121,7 @@ const goToEdit = () => {
           </div>
         </div>
 
-        <div class="bg-base-200 rounded-3xl p-6 border border-base-content/5">
+        <div v-if="recipe.protein_per_serving" class="bg-base-200 rounded-3xl p-6 border border-base-content/5">
           <h3 class="text-lg font-bold text-base-content mb-6">Nährwerte <span class="text-base-content/40 font-medium">/ Portion</span></h3>
           <div class="space-y-4">
             <div>

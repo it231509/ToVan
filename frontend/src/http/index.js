@@ -2,8 +2,8 @@ import axios from 'axios';
 import { supabase } from '@/supabase';
 
 const backend = axios.create({
-  /*baseURL: 'https://se231326-10988.node.fhstp.cc/',*/
-  baseURL: 'http://localhost:3000/',
+ /*baseURL: 'https://se231326-10988.node.fhstp.cc/',*/
+ baseURL: 'http://localhost:3000/',
   timeout: 10000,
 });
 

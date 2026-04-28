@@ -1,21 +1,22 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import backend from '@/http';
 
-const householdMembers = ref([
-  { id: 'u1', name: 'Lukas' },
-  { id: 'u2', name: 'Sarah' },
-  { id: 'u3', name: 'Tobi' },
-]);
-
-const cleaningBundles = ref([
-  { id: 1, title: 'Böden & Staub', description: 'Saugen, Wischen, Staubwischen.', icon: '🧹', color: 'bg-blue-500', isDone: false },
-  { id: 2, title: 'Bad & WC', description: 'Dusche, Spiegel, WC reinigen.', icon: '🧼', color: 'bg-purple-500', isDone: true },
-  { id: 3, title: 'Küche & Müll', description: 'Fronten, Müll, Spüle.', icon: '✨', color: 'bg-emerald-500', isDone: false }
-]);
-
-const skipWeeks = ref(0);
+const cleaningTasks = ref([]);
+const householdMembers = ref([]);
 const isModalOpen = ref(false);
-const newBundle = ref({ title: '', description: '', icon: '✨', color: 'bg-primary' });
+const loading = ref(true);
+
+// NEU: Edit-Status
+const isEditMode = ref(false);
+const editingTaskId = ref(null);
+
+// Überarbeitetes Objekt für neue Bereiche
+const newBundle = ref({ 
+  title: '', 
+  subtasks: [{ text: '', done: false }],
+  icon: '✨' 
+});
 
 const getCurrentWeekNumber = () => {
   const now = new Date();
@@ -24,81 +25,182 @@ const getCurrentWeekNumber = () => {
   return Math.ceil((now.getDay() + 1 + numberOfDays) / 7);
 };
 
-const getAssignedMember = (bundleIndex) => {
-  const week = getCurrentWeekNumber();
-  const memberCount = householdMembers.value.length;
-  if (memberCount === 0) return null;
-  
-  const rotationIndex = (week + skipWeeks.value + bundleIndex) % memberCount;
-  return householdMembers.value[rotationIndex];
-};
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const hRes = await backend.get('/users/household');
+    householdMembers.value = hRes.data.members;
 
-const addBundle = () => {
-  if (newBundle.value.title) {
-    cleaningBundles.value.push({ 
-      ...newBundle.value, 
-      id: Date.now(), 
-      isDone: false 
-    });
-    newBundle.value = { title: '', description: '', icon: '✨', color: 'bg-primary' };
-    isModalOpen.value = false;
+    const cRes = await backend.get('/cleaning/plan');
+    cleaningTasks.value = cRes.data.map(t => ({
+      ...t,
+      description: Array.isArray(t.description) ? t.description : []
+    }));
+  } catch (e) {
+    console.error("Fehler beim Laden des Putzplans", e);
+  } finally {
+    loading.value = false;
   }
 };
 
-const removeBundle = (id) => {
-  cleaningBundles.value = cleaningBundles.value.filter(b => b.id !== id);
+// NEU: Modal-Steuerung
+const openCreateModal = () => {
+  isEditMode.value = false;
+  editingTaskId.value = null;
+  newBundle.value = { title: '', subtasks: [{ text: '', done: false }], icon: '✨' };
+  isModalOpen.value = true;
 };
 
-const skipCurrentWeek = () => {
-  skipWeeks.value++;
+const openEditModal = (task) => {
+  isEditMode.value = true;
+  editingTaskId.value = task.id;
+  // Tiefe Kopie der Unteraufgaben, damit Änderungen nicht sofort im Hintergrund sichtbar sind
+  newBundle.value = {
+    title: task.title,
+    subtasks: JSON.parse(JSON.stringify(task.description)),
+    icon: task.icon || '✨'
+  };
+  isModalOpen.value = true;
 };
+
+const addSubtaskInput = () => newBundle.value.subtasks.push({ text: '', done: false });
+const removeSubtaskInput = (index) => newBundle.value.subtasks.splice(index, 1);
+
+const toggleSubtask = async (task, subtaskIndex) => {
+  task.description[subtaskIndex].done = !task.description[subtaskIndex].done;
+  const allDone = task.description.every(st => st.done);
+  
+  try {
+    await backend.patch(`/cleaning/update-content/${task.id}`, { 
+      description: task.description 
+    });
+
+    if (allDone !== task.is_done) {
+        await toggleMainStatus(task, allDone);
+    }
+  } catch (e) {
+    console.error("Fehler beim Speichern der Unteraufgabe");
+  }
+};
+
+const toggleMainStatus = async (task, forcedStatus = null) => {
+  const newStatus = forcedStatus !== null ? forcedStatus : !task.is_done;
+  try {
+    await backend.post('/cleaning/toggle', { 
+      taskId: task.id, 
+      isDone: newStatus 
+    });
+    task.is_done = newStatus;
+  } catch (e) {
+    console.error("Fehler beim Haupt-Status");
+  }
+};
+
+// GEÄNDERT: Kombinierte Speicherfunktion für Create & Edit
+const saveBundle = async () => {
+  if (!newBundle.value.title) return;
+  
+  const payload = {
+    title: newBundle.value.title,
+    description: newBundle.value.subtasks.filter(st => st.text.trim() !== '')
+  };
+
+  try {
+    if (isEditMode.value) {
+      await backend.patch(`/cleaning/update-content/${editingTaskId.value}`, payload);
+    } else {
+      await backend.post('/cleaning/task', payload);
+    }
+    newBundle.value = { title: '', subtasks: [{ text: '', done: false }], icon: '✨' };
+    isModalOpen.value = false;
+    fetchData();
+  } catch (e) {
+    console.error("Fehler beim Speichern");
+  }
+};
+
+const getAssignedMember = (index) => {
+  if (householdMembers.value.length === 0) return 'Niemand';
+  const week = getCurrentWeekNumber();
+  const rotationIndex = (week + index) % householdMembers.value.length;
+  return householdMembers.value[rotationIndex].display_name;
+};
+
+const removeTask = async (id) => {
+  if (!confirm('Bereich wirklich löschen?')) return;
+  try {
+    await backend.delete(`/cleaning/task/${id}`);
+    fetchData();
+  } catch (e) {
+    console.error("Fehler beim Löschen");
+  }
+};
+
+onMounted(fetchData);
 </script>
 
 <template>
   <div class="lg:container mx-auto p-0 max-w-5xl">
-    
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 px-2">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 px-3 lg:px-0">
       <div>
-        <p class="text-base-content/50 font-bold uppercase text-[10px] tracking-widest mt-1">
-          KW {{ getCurrentWeekNumber() }} • {{ cleaningBundles.length }} Bereiche aktiv
-        </p>
+        <h1 class="font-bold text-base-content/60 uppercase text-xs tracking-widest">KW {{ getCurrentWeekNumber() }} • {{ cleaningTasks.length }} Bereiche</h1>
       </div>
-      
-      <div class="flex flex-col gap-2 w-full md:w-auto">
-        <button @click="skipCurrentWeek" class="btn btn-outline border-base-300 btn-md rounded-xl">
-          Woche überspringen
-        </button>
-        <button @click="isModalOpen = true" class="btn btn-primary btn-md rounded-xl text-white">
-          + Neuer Bereich
-        </button>
-      </div>
+      <button @click="openCreateModal" class="w-full md:w-auto btn btn-primary rounded-xl text-white">
+        Bereich hinzufügen
+      </button>
     </header>
 
-    <div class="grid grid-cols-1 gap-6">
-      <div v-for="(bundle, index) in cleaningBundles" :key="bundle.id" 
-           class="relative overflow-hidden bg-base-100 border border-base-300 rounded-3xl p-6 lg:p-8 shadow-sm transition-all">
+    <div v-if="loading" class="flex justify-center py-20">
+      <span class="loading loading-ring loading-lg text-primary"></span>
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-6 px-3 lg:px-0">
+      <div v-for="(task, index) in cleaningTasks" :key="task.id" 
+           class="bg-base-100 border border-base-300 rounded-[2.5rem] p-6 lg:p-8 shadow-sm transition-all"
+           :class="{'opacity-60': task.is_done}">
         
-        <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-          <div class="flex-grow space-y-3">
-            <div class="flex items-center gap-4">
-              <div>
-                <h2 class="text-xl font-black text-base-content">{{ bundle.title }}</h2>
-                <button @click="removeBundle(bundle.id)" class="text-[10px] text-error font-bold uppercase hover:underline">Bereich löschen</button>
+        <div class="flex flex-col lg:flex-row gap-8 items-start">
+          <div class="flex-grow w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-2xl font-black text-base-content">{{ task.title }}</h2>
+              <div class="flex gap-2">
+                <button @click="openEditModal(task)" class="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center text-base-content/70 hover:bg-base-300 hover:border-primary/30 hover:text-primary transition-all active:scale-95 shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button @click="removeTask(task.id)" class="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center text-error/60 hover:bg-error/10 hover:border-error/30 hover:text-error transition-all active:scale-95 shadow-sm disabled:opacity-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </div>
             </div>
-            <p class="text-base-content/60 leading-relaxed max-w-xl">{{ bundle.description }}</p>
+
+            <div class="space-y-2">
+              <div v-for="(subtask, stIndex) in task.description" :key="stIndex" 
+                   @click="toggleSubtask(task, stIndex)"
+                   class="flex items-center gap-3 p-3 rounded-2xl hover:bg-base-200 cursor-pointer transition-colors border border-transparent"
+                   :class="{'bg-base-200/50 border-base-300': subtask.done}">
+                <div class="w-6 h-6 rounded-lg border-2 border-primary flex items-center justify-center transition-all"
+                     :class="subtask.done ? 'bg-primary' : 'bg-transparent'">
+                  <svg v-if="subtask.done" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <span class="text-base-content font-medium" :class="{'line-through opacity-40': subtask.done}">
+                  {{ subtask.text }}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div class="flex flex-col gap-3 bg-base-200/50 p-6 rounded-3xl w-full border border-base-300/50">
+          <div class="flex flex-col gap-4 bg-base-200/50 p-6 rounded-[2rem] w-full lg:w-72 border border-base-300/50">
             <div class="flex flex-col">
-                <span class="text-[12px] font-black uppercase text-base-content/30 tracking-widest">Zuständig</span>
-                <span v-if="getAssignedMember(index)" class="text-[14px] font-black">{{ getAssignedMember(index).name }}</span>
-             </div>
+              <span class="text-[10px] font-black uppercase text-base-content/40 tracking-widest">Zuständig</span>
+              <span class="text-xl font-black text-primary">{{ getAssignedMember(index) }}</span>
+            </div>
              
-             <button @click="bundle.isDone = !bundle.isDone" 
-                     class="btn btn-block mt-2 rounded-xl border-none font-black shadow-sm transition-all"
-                     :class="bundle.isDone ? 'btn-success text-white' : 'bg-base-300 text-base-content'">
-               {{ bundle.isDone ? '✓ Erledigt' : 'Abhaken' }}
+            <button @click="toggleMainStatus(task)" 
+                    class="btn btn-block rounded-2xl border-none font-black shadow-sm"
+                    :class="task.is_done ? 'btn-success text-white' : 'bg-base-300 text-base-content'">
+               {{ task.is_done ? '✓ Ganzer Bereich fertig' : 'Alles erledigt' }}
              </button>
           </div>
         </div>
@@ -106,33 +208,36 @@ const skipCurrentWeek = () => {
     </div>
 
     <dialog class="modal" :class="{'modal-open': isModalOpen}">
-      <div class="modal-box rounded-3xl border border-base-300 shadow-2xl bg-base-100">
-        <h3 class="font-black text-xl mb-6">Bereich hinzufügen</h3>
+      <div class="modal-box rounded-[2.5rem] border border-base-300 bg-base-100 max-w-xl shadow-2xl">
+        <h3 class="font-black text-2xl mb-6">{{ isEditMode ? 'Bereich bearbeiten' : 'Neuer Putzbereich' }}</h3>
         
-        <div class="space-y-4">
+        <div class="space-y-6">
           <div class="form-control">
-            <input v-model="newBundle.title" type="text" placeholder="z.B. Garten" class="input input-bordered rounded-xl bg-base-200 border-base-300 focus:border-primary w-full" />
+            <label class="label text-[10px] uppercase font-black text-base-content/40">Name des Bereichs</label>
+            <input v-model="newBundle.title" type="text" placeholder="z.B. Küche" class="input input-bordered rounded-2xl w-full bg-base-200 border-base-300 focus:ring-primary" />
           </div>
+
           <div class="form-control">
-            <textarea v-model="newBundle.description" class="textarea textarea-bordered rounded-xl bg-base-200 border-base-300 focus:border-primary w-full" placeholder="Was genau ist zu tun?"></textarea>
+            <label class="label text-[10px] uppercase font-black text-base-content/40">Unteraufgaben</label>
+            <div class="space-y-2">
+              <div v-for="(st, index) in newBundle.subtasks" :key="index" class="flex gap-2">
+                <input v-model="st.text" type="text" placeholder="Aufgabe..." class="input input-bordered rounded-xl flex-grow bg-base-200 border-base-300 focus:ring-primary" />
+                <button @click="removeSubtaskInput(index)" v-if="newBundle.subtasks.length > 1" class="btn btn-square btn-ghost text-error">
+                  ✕
+                </button>
+              </div>
+              <button @click="addSubtaskInput" class="btn btn-ghost btn-sm text-primary font-bold mt-2">+ Weitere Aufgabe</button>
+            </div>
           </div>
         </div>
 
-        <div class="modal-action flex flex-col">
-          <button @click="isModalOpen = false" class="btn btn-ghost rounded-xl font-bold">Abbrechen</button>
-          <button @click="addBundle" class="btn btn-primary rounded-xl text-white font-bold">Erstellen</button>
+        <div class="modal-action flex flex-col gap-2 mt-8">
+          <button @click="saveBundle" class="btn btn-primary rounded-2xl text-white font-bold w-full">
+            {{ isEditMode ? 'Änderungen speichern' : 'Bereich erstellen' }}
+          </button>
+          <button @click="isModalOpen = false" class="btn btn-ghost rounded-2xl w-full">Abbrechen</button>
         </div>
       </div>
     </dialog>
-
-    <div class="mt-8 p-6 bg-primary/5 rounded-3xl border border-primary/10 flex items-center gap-4">
-      <p class="text-xs text-primary/80 font-medium leading-relaxed">
-        Wenn du eine Woche <strong>überspringst</strong>, rotiert die Zuweisung sofort einen Schritt weiter. Das ist nützlich, wenn jemand im Urlaub ist oder ihr die Rollen manuell tauschen wollt.
-      </p>
-    </div>
   </div>
 </template>
-
-<style scoped>
-.stroke-round { stroke-linecap: round; }
-</style>
